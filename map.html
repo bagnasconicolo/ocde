@@ -525,15 +525,26 @@
                   };
 
                   const drawCps = (w) => {
+                    const vals = movingAvg(cpsArr, w);
                     Plotly.react(
                       plotCpsDiv,
                       [
                         {
                           x,
-                          y: movingAvg(cpsArr, w),
+                          y: vals,
                           name: "CPS",
                           type: "scatter",
-                          line: { width: 2 },
+                          mode: "lines",
+                          line: {
+                            width: 2,
+                            color: vals,
+                            colorscale: [
+                              [0, "rgb(0,255,0)"],
+                              [1, "rgb(255,0,0)"],
+                            ],
+                            cmin: Math.min(...vals),
+                            cmax: Math.max(...vals),
+                          },
                         },
                       ],
                       {
@@ -554,15 +565,26 @@
                   };
 
                   const drawDose = (w) => {
+                    const vals = movingAvg(dosesArr, w);
                     Plotly.react(
                       plotDoseDiv,
                       [
                         {
                           x,
-                          y: movingAvg(dosesArr, w),
+                          y: vals,
                           name: "Dose (µSv/h)",
                           type: "scatter",
-                          line: { width: 2 },
+                          mode: "lines",
+                          line: {
+                            width: 2,
+                            color: vals,
+                            colorscale: [
+                              [0, "rgb(0,255,0)"],
+                              [1, "rgb(255,0,0)"],
+                            ],
+                            cmin: Math.min(...vals),
+                            cmax: Math.max(...vals),
+                          },
                         },
                       ],
                       {
