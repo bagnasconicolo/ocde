@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Radiation Point-Intensity Map</title>
+    <title>Radiation Point‑Intensity Map</title>
 
     <!-- Leaflet core -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -21,6 +21,16 @@
       #map {
         height: 100%;
         margin: 0;
+      }
+      /* dark pop‑ups */
+      .leaflet-popup-content-wrapper {
+        background: #1f2937;
+        color: #f3f4f6;
+        border-radius: 0.75rem;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.6);
+      }
+      .leaflet-popup-tip {
+        background: #1f2937;
       }
     </style>
   </head>
@@ -48,7 +58,7 @@
        * CONFIG
        * -------------------------------------------------- */
       const FALLBACK_TRACK_FILES = [
-        "data/Track 11 Jul 2025 22-19-23.rctrk", // adjust as needed
+        "data/Track 11 Jul 2025 22-19-23.rctrk", // adjust / extend
       ];
 
       window.addEventListener("load", () => {
@@ -70,8 +80,9 @@
         L.control.zoom({ position: "bottomleft" }).addTo(map);
 
         /* ------------------ STATE ------------------ */
-        const points = []; // {lat,lon,dose,cps}
+        const allPoints = []; // flat array of every {lat,lon,dose,cps,fname}
         const pointLayer = L.layerGroup().addTo(map);
+        const lineLayer = L.layerGroup().addTo(map);
 
         /* ------------------ HELPERS ------------------ */
         const fetchTrackList = async () => {
@@ -85,7 +96,6 @@
           }
         };
 
-        // parse JSON .rctrk or CSV/TSV
         const parseFile = (text) => {
           // JSON (.rctrk)
           try {
@@ -118,6 +128,31 @@
             .filter((p) => !isNaN(p.lat) && !isNaN(p.lon));
         };
 
+        /**
+         * Greedy nearest‑neighbour path (O(n²)) – good enough for small GPS tracks.
+         * Returns array of [lat,lon].
+         */
+        function buildNearestPath(pts) {
+          if (pts.length < 2) return pts.map((p) => [p.lat, p.lon]);
+          const remaining = pts.slice();
+          const ordered = [remaining.shift()];
+          while (remaining.length) {
+            let bestIdx = 0,
+              bestDist = Infinity;
+            remaining.forEach((p, i) => {
+              const d =
+                Math.pow(p.lat - ordered[ordered.length - 1].lat, 2) +
+                Math.pow(p.lon - ordered[ordered.length - 1].lon, 2);
+              if (d < bestDist) {
+                bestDist = d;
+                bestIdx = i;
+              }
+            });
+            ordered.push(remaining.splice(bestIdx, 1)[0]);
+          }
+          return ordered.map((p) => [p.lat, p.lon]);
+        }
+
         /* ------------------ MAIN LOADER ------------------ */
         (async () => {
           const files = await fetchTrackList();
@@ -129,8 +164,40 @@
               if (!res.ok) throw new Error(`HTTP ${res.status}`);
               const pts = parseFile(await res.text());
               if (!pts.length) throw new Error("no data");
-              points.push(...pts);
+
+              // enrich with filename so we can filter later if needed
+              pts.forEach((p) => (p.fname = fname));
+              allPoints.push(...pts);
               pts.forEach((p) => bounds.push([p.lat, p.lon]));
+
+              // stats for popup
+              const doses = pts.map((p) => p.dose);
+              const cpses = pts.map((p) => p.cps);
+              const avgDose = doses.reduce((a, b) => a + b, 0) / doses.length;
+              const peakDose = Math.max(...doses);
+              const avgCps = cpses.reduce((a, b) => a + b, 0) / cpses.length;
+              const peakCps = Math.max(...cpses);
+
+              // build nearest‑neighbour path and add polyline
+              const pathLatLng = buildNearestPath(pts);
+              const trackLine = L.polyline(pathLatLng, {
+                color: "#38bdf8",
+                weight: 3,
+                opacity: 0.4,
+              }).addTo(lineLayer);
+
+              trackLine.on("click", () => {
+                trackLine
+                  .bindPopup(`
+                    <div class='prose prose-sm dark:prose-invert'>
+                      <h3>${fname.split("/").pop()}</h3>
+                      <p><strong>Avg dose:</strong> ${avgDose.toFixed(3)} µSv/h<br>
+                         <strong>Peak dose:</strong> ${peakDose.toFixed(3)} µSv/h</p>
+                      <p><strong>Avg cps:</strong> ${avgCps.toFixed(1)} cps<br>
+                         <strong>Peak cps:</strong> ${peakCps.toFixed(1)} cps</p>
+                    </div>`)
+                  .openPopup();
+              });
             } catch (e) {
               console.warn("⚠️  skip", fname, e.message);
             }
@@ -142,31 +209,38 @@
 
         /* ------------------ RENDERING ------------------ */
         function valueToRGB(val, min, max) {
-          // Map [min → max] → green (#00ff00) → yellow (#ffff00) → red (#ff0000)
-          const t = (val - min) / (max - min || 1e-9); // [0,1]
+          const t = (val - min) / (max - min || 1e-9); // 0→1
           const r = Math.round(255 * t);
           const g = Math.round(255 * (1 - t));
-          return `rgb(${r},${g},0)`;
+          return `rgb(${r},${g},0)`; // green→red
         }
 
         function drawDots() {
-          const metric = document.getElementById("metricSelect").value; // dose | cps
-          const vals = points.map((p) => (metric === "dose" ? p.dose : p.cps));
+          const metric = document.getElementById("metricSelect").value;
+          const vals = allPoints.map((p) => (metric === "dose" ? p.dose : p.cps));
           const minVal = Math.min(...vals);
           const maxVal = Math.max(...vals);
 
           pointLayer.clearLayers();
-          points.forEach((p) => {
+          allPoints.forEach((p) => {
             const val = metric === "dose" ? p.dose : p.cps;
             const color = valueToRGB(val, minVal, maxVal);
-            L.circleMarker([p.lat, p.lon], {
-              radius: 4,
+            const marker = L.circleMarker([p.lat, p.lon], {
+              radius: 6, // larger
               renderer: map.getRenderer(map),
               fillColor: color,
               color: color,
-              fillOpacity: 0.9, // uniform opacity across all dots
+              fillOpacity: 0.6, // slightly less opaque
               weight: 0,
             }).addTo(pointLayer);
+
+            // Instantaneous values popup
+            marker.bindPopup(
+              `<div class='prose prose-sm dark:prose-invert'>` +
+                `<strong>Dose:</strong> ${p.dose.toFixed(3)} µSv/h<br>` +
+                `<strong>CPS:</strong> ${p.cps.toFixed(1)} cps` +
+                `</div>`
+            );
           });
         }
 
