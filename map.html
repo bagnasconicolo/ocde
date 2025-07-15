@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Radiation Point-Intensity Map</title>
+
+    <!-- Leaflet core -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
+
+    <!-- PapaParse (CSV/TSV) -->
+    <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js" defer></script>
+
+    <!-- Plotly -->
+    <script src="https://cdn.plot.ly/plotly-2.32.0.min.js" defer></script>
+
+    <!-- Tailwind dark UI -->
+    <script src="https://cdn.tailwindcss.com?plugins=typography" defer></script>
+
+    <style>
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+      }
+      #map {
+        height: calc(100vh - 3.5rem);
+      }
+      /* Bigger, dark pop-ups with high-contrast text */
+      .leaflet-popup-content-wrapper {
+        background: #1f2937;
+        color: #ffffff;
+        border-radius: 0.75rem;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.6);
+      }
+      .leaflet-popup-tip {
+        background: #1f2937;
+      }
+      .leaflet-popup-content {
+        width: 400px; /* bigger popup */
+      }
+      strong {
+        color: #fffbfb; /* brighter bold */
+      }
+    </style>
+  </head>
+  <body class="bg-gray-900 text-gray-200 pt-14">
+
+    <nav class="bg-gray-800 text-gray-100 fixed top-0 left-0 right-0 z-50">
+      <div class="max-w-5xl mx-auto px-4 py-3 flex justify-between items-center">
+        <a href="index.html" class="font-bold">OCDE</a>
+        <div class="space-x-4">
+          <a href="map.html" class="hover:underline">Map</a>
+          <a href="about.html" class="hover:underline">About Us</a>
+        </div>
+      </div>
+    </nav>
+
+    <button
+      id="toggleSidebar"
+      class="fixed top-16 left-4 bg-gray-800/80 text-gray-100 p-2 rounded-md md:hidden z-[1001]"
+    >
+      ☰
+    </button>
+    <div class="flex h-screen">
+      <div id="map" class="flex-1"></div>
+      <aside
+        id="sidebar"
+        class="fixed top-14 left-0 h-full w-72 max-w-full bg-gray-800/90 backdrop-blur-md p-4 space-y-4 overflow-y-auto transform -translate-x-full transition-transform z-[1000] md:relative md:translate-x-0 md:w-72 md:bg-opacity-100 text-gray-200"
+
+      >
+        <h2 class="text-lg font-semibold mb-2">Tracks</h2>
+        <ul id="trackList" class="space-y-2 text-sm"></ul>
+        <div>
+          <label for="metricSelect" class="block mb-1 font-medium">Metric</label>
+          <select
+            id="metricSelect"
+            class="bg-gray-700 border border-gray-600 rounded-md px-2 py-1 w-full focus:outline-none"
+          >
+            <option value="dose">Dose (µSv/h)</option>
+            <option value="cps">Counts (cps)</option>
+          </select>
+        </div>
+        <div>
+          <label class="flex items-center gap-2 text-gray-200" for="trackViewToggle">
+            <input type="checkbox" id="trackViewToggle" class="accent-blue-500" /> Track view
+          </label>
+        </div>
+
+      </aside>
+      <!-- Full screen track popup -->
+      <div
+        id="trackPopup"
+        class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden z-[1002] overflow-y-auto p-4 flex items-start justify-center"
+      >
+        <div
+          id="trackPopupContent"
+          class="relative mx-auto w-full max-w-3xl bg-gray-800 rounded-lg p-4 text-gray-200"
+        >
+          <button
+            id="trackPopupClose"
+            class="absolute top-2 right-2 text-gray-300 hover:text-white"
+          >
+            ✕
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      /* ------------------ CONFIG ------------------ */
+      const FALLBACK_TRACK_FILES = [
+        "data/Track 11 Jul 2025 22-19-23.rctrk",
+      ];
+
+      window.addEventListener("load", () => {
+        /* ------------------ MAP ------------------ */
+        const map = L.map("map", {
+          worldCopyJump: true,
+          attributionControl: false,
+          zoomControl: false,
+          renderer: L.canvas(),
+        }).setView([20, 0], 2);
+
+        L.tileLayer(
+          "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+          {
+            maxZoom: 20,
+            attribution: "&copy; OpenStreetMap & CartoDB",
+          }
+        ).addTo(map);
+        L.control.zoom({ position: "bottomleft" }).addTo(map);
+
+        /* ------------------ STATE ------------------ */
+        const allPoints = [];
+        const tracks = {};
+        const pointLayer = L.layerGroup().addTo(map);
+        const lineLayer = L.layerGroup().addTo(map);
+        const trackListElem = document.getElementById("trackList");
+        const sidebar = document.getElementById("sidebar");
+        const trackViewToggle = document.getElementById("trackViewToggle");
+        const trackPopup = document.getElementById("trackPopup");
+        const trackPopupContent = document.getElementById("trackPopupContent");
+        document
+          .getElementById("trackPopupClose")
+          .addEventListener("click", () =>
+            trackPopup.classList.add("hidden")
+          );
+        let trackView = false;
+
+        document
+          .getElementById("toggleSidebar")
+          .addEventListener("click", () =>
+            sidebar.classList.toggle("-translate-x-full")
+          );
+
+        /* ------------------ HELPERS ------------------ */
+        const fetchTrackList = async () => {
+          try {
+            const res = await fetch("data/track-index.json");
+            if (!res.ok) throw new Error();
+            return await res.json();
+          } catch {
+            console.warn("track-index.json missing → fallback list");
+            return FALLBACK_TRACK_FILES;
+          }
+        };
+
+        const parseFile = (text) => {
+          // .rctrk JSON
+          try {
+            const js = JSON.parse(text);
+            if (Array.isArray(js.markers)) {
+              return js.markers
+                .map((m) => ({
+                  lat: +m.lat,
+                  lon: +m.lon,
+                  dose: +(m.doseRate ?? m.dose_uSv_h ?? m.dose ?? 0),
+                  cps: +(m.countRate ?? m.cps ?? 0),
+                  energy: +(m.energy ?? m.energyValue ?? m.energy_ev ?? NaN),
+                }))
+                .filter((p) => !isNaN(p.lat) && !isNaN(p.lon));
+            }
+          } catch (_) {}
+          // CSV fallback (lat lon dose cps energy?)
+          const parsed = Papa.parse(text.trim(), {
+            dynamicTyping: true,
+            skipEmptyLines: true,
+          });
+          return parsed.data
+            .filter((r) => r.length >= 4)
+            .map((r) => ({
+              lat: +r[0],
+              lon: +r[1],
+              dose: +r[2],
+              cps: +r[3],
+              energy: +r[4] || NaN,
+            }))
+            .filter((p) => !isNaN(p.lat) && !isNaN(p.lon));
+        };
+
+        const colorScale = (val, min, max) => {
+          if (val === 0) return "#777"; // zero measurements grey
+          const t = (val - min) / (max - min || 1e-9);
+          const r = Math.round(255 * t);
+          const g = Math.round(255 * (1 - t));
+          return `rgb(${r},${g},0)`;
+        };
+
+        /* ------------------ MAIN LOAD ------------------ */
+        (async () => {
+          const files = await fetchTrackList();
+          const bounds = [];
+
+          for (const fname of files) {
+            try {
+              const res = await fetch(fname);
+              if (!res.ok) throw new Error(`HTTP ${res.status}`);
+              const pts = parseFile(await res.text());
+              if (!pts.length) throw new Error("no data");
+
+              pts.forEach((p) => {
+                p.fname = fname;
+                bounds.push([p.lat, p.lon]);
+                allPoints.push(p);
+              });
+
+              // line: connect sequentially (no closing) – original method
+              const path = pts.map((p) => [p.lat, p.lon]);
+              const line = L.polyline(path, {
+                color: "#facc15",
+                weight: 3,
+                opacity: 0.7,
+              });
+              tracks[fname] = { points: pts, line, visible: true };
+              const li = document.createElement("li");
+              li.innerHTML =
+                `<label class='flex items-center gap-2 text-gray-200'><input type='checkbox' class='trackCheck accent-blue-500' data-file='${fname}' checked> ${fname.split("/").pop()}</label>`;
+
+              trackListElem.appendChild(li);
+
+              // statistics
+              const doses = pts.map((p) => p.dose);
+              const cpses = pts.map((p) => p.cps);
+              const stats = {
+                avgDose: doses.reduce((a, b) => a + b, 0) / doses.length,
+                minDose: Math.min(...doses),
+                maxDose: Math.max(...doses),
+                avgCps: cpses.reduce((a, b) => a + b, 0) / cpses.length,
+                minCps: Math.min(...cpses),
+                maxCps: Math.max(...cpses),
+              };
+
+              // IDs for elements
+              const uid = btoa(fname).replace(/[^A-Za-z0-9]/g, "");
+              const plotId = `plot-${uid}`;
+              const histId = `hist-${uid}`;
+              const sliderId = `slider-${uid}`;
+
+              line.on("click", () => {
+                trackPopupContent.innerHTML = `
+                  <button id='trackPopupClose' class='absolute top-2 right-2 text-gray-300 hover:text-white'>✕</button>
+                  <div class='prose prose-sm dark:prose-invert text-white'>
+                    <h3 class='text-lg'>${fname.split("/").pop()}</h3>
+                    <p>
+                      <strong>Dose</strong> min ${stats.minDose.toFixed(3)} / avg ${stats.avgDose.toFixed(3)} / max ${stats.maxDose.toFixed(3)} µSv/h<br>
+                      <strong>CPS</strong>  min ${stats.minCps.toFixed(1)} / avg ${stats.avgCps.toFixed(1)} / max ${stats.maxCps.toFixed(1)} cps
+                    </p>
+                    <label class='block text-xs mb-1'>Avg window: <span id='val-${uid}'>1</span></label>
+                    <input type='range' min='1' max='50' value='1' id='${sliderId}' class='w-full mb-2'>
+                    <div id='${plotId}' class='w-full h-56'></div>
+                    <h4 class='mt-3 text-sm font-semibold'>Dose/CPS histogram</h4>
+                    <div id='${histId}' class='w-full h-48'></div>
+                  </div>`;
+                trackPopup.classList.remove("hidden");
+                document
+                  .getElementById("trackPopupClose")
+                  .addEventListener("click", () =>
+                    trackPopup.classList.add("hidden")
+                  );
+
+                setTimeout(() => {
+                  const plotDiv = document.getElementById(plotId);
+                  if (!plotDiv) return;
+                  const x = [...Array(pts.length).keys()];
+                  const dosesArr = pts.map((p) => p.dose);
+                  const cpsArr = pts.map((p) => p.cps);
+
+                  const movingAvg = (arr, w) => {
+                    if (w <= 1) return arr;
+                    const out = [];
+                    let acc = 0;
+                    for (let i = 0; i < arr.length; i++) {
+                      acc += arr[i];
+                      if (i >= w) acc -= arr[i - w];
+                      out.push(acc / Math.min(i + 1, w));
+                    }
+                    return out;
+                  };
+
+                  const drawLine = (w) => {
+                    Plotly.react(
+                      plotDiv,
+                      [
+                        {
+                          x,
+                          y: movingAvg(dosesArr, w),
+                          name: "Dose (µSv/h)",
+                          type: "scatter",
+                          line: { width: 2 },
+                        },
+                        {
+                          x,
+                          y: movingAvg(cpsArr, w),
+                          name: "CPS",
+                          type: "scatter",
+                          yaxis: "y2",
+                          line: { width: 2 }, // solid line now
+                        },
+                      ],
+                      {
+                        margin: { l: 40, r: 40, t: 10, b: 30 },
+                        paper_bgcolor: "#1f2937",
+                        plot_bgcolor: "#1f2937",
+                        font: { color: "#ffffff", size: 10 },
+                        legend: { orientation: "h" },
+                        xaxis: { title: "fix #", showgrid: false },
+                        yaxis: { title: "µSv/h", showgrid: false },
+                        yaxis2: { overlaying: "y", side: "right", title: "cps" },
+                      },
+                      { displayModeBar: false }
+                    );
+                    document.getElementById(`val-${uid}`).textContent = w;
+                  };
+
+                  const histDiv = document.getElementById(histId);
+                  Plotly.newPlot(
+                    histDiv,
+                    [
+                      {
+                        x: dosesArr,
+                        type: "histogram",
+                        opacity: 0.6,
+                        name: "Dose (µSv/h)",
+                        marker: { color: "#38bdf8" },
+                      },
+                      {
+                        x: cpsArr,
+                        type: "histogram",
+                        opacity: 0.6,
+                        name: "CPS",
+                        marker: { color: "#f59e0b" },
+                      },
+                    ],
+                    {
+                      barmode: "overlay",
+                      margin: { l: 30, r: 20, t: 10, b: 30 },
+                      paper_bgcolor: "#1f2937",
+                      plot_bgcolor: "#1f2937",
+                      font: { color: "#ffffff", size: 10 },
+                      xaxis: { title: "value", showgrid: false },
+                      yaxis: { title: "freq", showgrid: false },
+                    },
+                    { displayModeBar: false }
+                  );
+
+                  // slider
+                  drawLine(1);
+                  document.getElementById(sliderId).addEventListener("input", (e) => drawLine(parseInt(e.target.value)));
+                }, 120);
+              });
+            } catch (e) {
+              console.warn("skip", fname, e.message);
+            }
+          }
+
+          if (bounds.length) map.fitBounds(bounds, { padding: [50, 50] });
+          drawDots();
+        })();
+
+        /* ------------------ DOT RENDER ------------------ */
+        function drawDots() {
+          if (trackView) {
+            pointLayer.clearLayers();
+            return;
+          }
+          const metric = document.getElementById("metricSelect").value;
+          const visiblePoints = allPoints.filter((p) => tracks[p.fname]?.visible);
+          if (!visiblePoints.length) {
+            pointLayer.clearLayers();
+            return;
+          }
+          const vals = visiblePoints.map((p) =>
+            metric === "dose" ? p.dose : p.cps
+          );
+          const min = Math.min(...vals);
+          const max = Math.max(...vals);
+
+          pointLayer.clearLayers();
+          visiblePoints.forEach((p) => {
+            const valMetric = metric === "dose" ? p.dose : p.cps;
+            const color = p.dose === 0 && p.cps === 0 ? "#777" : colorScale(valMetric, min, max);
+            const marker = L.circleMarker([p.lat, p.lon], {
+              radius: 6,
+              renderer: map.getRenderer(map),
+              fillColor: color,
+              color: color,
+              fillOpacity: 0.5,
+              weight: 0,
+            }).addTo(pointLayer);
+
+            marker.bindPopup(
+              `<div class='prose prose-sm dark:prose-invert text-white'>` +
+                `<strong>Dose:</strong> ${p.dose.toFixed(3)} µSv/h<br>` +
+                `<strong>CPS:</strong> ${p.cps.toFixed(1)} cps` +
+                `</div>`
+            );
+          });
+        }
+
+        document
+          .getElementById("metricSelect")
+          .addEventListener("change", drawDots);
+        trackListElem.addEventListener("change", (e) => {
+          if (!e.target.dataset.file) return;
+          const t = tracks[e.target.dataset.file];
+          t.visible = e.target.checked;
+          if (trackView) {
+            if (t.visible) {
+              lineLayer.addLayer(t.line);
+            } else {
+              lineLayer.removeLayer(t.line);
+            }
+          }
+          drawDots();
+        });
+
+        trackViewToggle.addEventListener("change", () => {
+          trackView = trackViewToggle.checked;
+          if (trackView) {
+            pointLayer.clearLayers();
+            lineLayer.clearLayers();
+            Object.values(tracks).forEach((t) => {
+              if (t.visible) lineLayer.addLayer(t.line);
+            });
+          } else {
+            lineLayer.clearLayers();
+            drawDots();
+          }
+
+        });
+      });
+    </script>
+  </body>
+</html>
