@@ -3,13 +3,13 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Radiation Heat-Map</title>
+    <title>Radiation Heat‑Map</title>
 
     <!-- Leaflet core (no SRI → fewer silent failures) -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
 
-    <!-- Leaflet-heat plugin -->
+    <!-- Leaflet‑heat plugin -->
     <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js" defer></script>
 
     <!-- PapaParse for CSV */ JSON fallback parsing -->
@@ -78,13 +78,18 @@
           radius: 14,
           blur: 24,
           maxZoom: 18,
-          // colour gradient (blue → red)
+          /**
+           * All pixels share (at least) this opacity, so the map no longer
+           * fades out in low-intensity areas. 1 = fully opaque.
+           */
+          minOpacity: 0.8,
+          /**
+           * Green → yellow → red gradient.
+           */
           gradient: {
-            0: "#2c7bb6",
-            0.3: "#abd9e9",
-            0.55: "#ffffbf",
-            0.8: "#fdae61",
-            1: "#d7191c",
+            0.0: "#00ff00",   // green
+            0.5: "#ffff00",   // yellow
+            1.0: "#ff0000",   // red
           },
         }).addTo(map);
 
