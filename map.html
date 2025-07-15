@@ -272,7 +272,7 @@
           try {
             const js = JSON.parse(text);
             if (Array.isArray(js.markers)) {
-              return js.markers
+              const points = js.markers
                 .map((m) => ({
                   lat: +m.lat,
                   lon: +m.lon,
@@ -282,6 +282,7 @@
                   date: +m.date || 0,
                 }))
                 .filter((p) => !isNaN(p.lat) && !isNaN(p.lon));
+              return { points, title: js.title };
             }
           } catch (_) {}
           // CSV fallback (lat lon dose cps energy?)
@@ -289,7 +290,7 @@
             dynamicTyping: true,
             skipEmptyLines: true,
           });
-          return parsed.data
+          const points = parsed.data
             .filter((r) => r.length >= 4)
             .map((r) => ({
               lat: +r[0],
@@ -300,6 +301,7 @@
               date: 0,
             }))
             .filter((p) => !isNaN(p.lat) && !isNaN(p.lon));
+          return { points };
         };
 
         const colorScale = (val, min, max) => {
@@ -367,7 +369,7 @@
             try {
               const res = await fetch(fname);
               if (!res.ok) throw new Error(`HTTP ${res.status}`);
-              const pts = parseFile(await res.text());
+              const { points: pts, title } = parseFile(await res.text());
               if (!pts.length) throw new Error("no data");
               pts.sort((a, b) => a.date - b.date);
 
@@ -388,10 +390,11 @@
                 weight: 3,
                 opacity: 0.7,
               });
-              tracks[fname] = { points: pts, line, visible: true };
+              tracks[fname] = { points: pts, line, visible: true, title };
               const li = document.createElement("li");
+              const label = title || fname.split("/").pop();
               li.innerHTML =
-                `<label class='flex items-center gap-2 text-gray-200'><input type='checkbox' class='trackCheck accent-blue-500' data-file='${fname}' checked> ${fname.split("/").pop()}</label>`;
+                `<label class='flex items-center gap-2 text-gray-200'><input type='checkbox' class='trackCheck accent-blue-500' data-file='${fname}' checked> ${label}</label>`;
 
               trackListElem.appendChild(li);
 
@@ -407,12 +410,13 @@
               const sliderDoseId = `slider-dose-${uid}`;
 
               line.on("click", () => {
-                const filtered = filterByDate(pts);
-                const stats = computeStats(filtered);
+
+                const displayName = tracks[fname].title || fname.split("/").pop();
+
                 trackPopupContent.innerHTML = `
                   <button id='trackPopupClose' class='absolute top-2 right-2 text-gray-300 hover:text-white'>✕</button>
                   <div class='prose prose-sm prose-invert max-w-none mb-4'>
-                    <h3 class='text-lg font-semibold'>${fname.split("/").pop()}</h3>
+                    <h3 class='text-lg font-semibold'>${displayName}</h3>
                   </div>
                   <div class='grid grid-cols-3 gap-2 sm:gap-4 mb-4 text-center text-xs sm:text-sm'>
                     <div class='bg-gray-900/40 p-2 rounded-lg shadow'>
