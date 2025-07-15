@@ -64,6 +64,12 @@ window.addEventListener("load", () => {
   /* ------------------ STATE ------------------ */
   const allPoints = [];
   const tracks = {};
+  let nextHue = 0;
+  const nextTrackColor = () => {
+    const color = `hsl(${nextHue}, 100%, 50%)`;
+    nextHue = (nextHue + 137.508) % 360;
+    return color;
+  };
   const pointLayer = L.layerGroup().addTo(map);
   const lineLayer = L.layerGroup().addTo(map);
   const trackListElem = document.getElementById("trackList");
@@ -216,15 +222,16 @@ window.addEventListener("load", () => {
 
         // line: connect points in chronological order
         const path = pts.map((p) => [p.lat, p.lon]);
+        const color = nextTrackColor();
         const line = L.polyline(path, {
-          color: "#facc15",
+          color,
           weight: 3,
           opacity: 0.7,
         });
-        tracks[fname] = { points: pts, line, visible: true };
+        tracks[fname] = { points: pts, line, visible: true, color };
         const li = document.createElement("li");
         li.innerHTML =
-          `<label class='flex items-center gap-2 text-gray-200'><input type='checkbox' class='trackCheck accent-blue-500' data-file='${fname}' checked> ${fname.split("/").pop()}</label>`;
+          `<label class='flex items-center gap-2 text-gray-200'><input type='checkbox' class='trackCheck accent-blue-500' data-file='${fname}' checked><span class='inline-block w-3 h-3 rounded-full' style='background:${color}'></span> ${fname.split("/").pop()}</label>`;
 
         trackListElem.appendChild(li);
 
