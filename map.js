@@ -413,7 +413,7 @@ window.addEventListener("load", () => {
 
             const drawCps = (w) => {
               const vals = movingAvg(cpsArr, w);
-              Plotly.react(
+              Plotly.newPlot(
                 plotCpsDiv,
                 [
                   {
@@ -454,7 +454,7 @@ window.addEventListener("load", () => {
 
             const drawDose = (w) => {
               const vals = movingAvg(dosesArr, w);
-              Plotly.react(
+              Plotly.newPlot(
                 plotDoseDiv,
                 [
                   {
