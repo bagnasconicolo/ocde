@@ -4,6 +4,9 @@ const FALLBACK_TRACK_FILES = [
 ];
 
 window.addEventListener("load", () => {
+  const style = document.createElement("style");
+  style.textContent = `.track-line, .data-dot { filter: drop-shadow(0 0 2px #000); }`;
+  document.head.appendChild(style);
   /* ------------------ MAP ------------------ */
   const map = L.map("map", {
     worldCopyJump: true,
@@ -250,6 +253,7 @@ window.addEventListener("load", () => {
           color,
           weight: 3,
           opacity: 0.7,
+          className: "track-line",
         });
         const li = document.createElement("li");
         const label = document.createElement("label");
@@ -604,6 +608,7 @@ window.addEventListener("load", () => {
         color: color,
         fillOpacity: 0.5,
         weight: 0,
+        className: "data-dot",
       }).addTo(pointLayer);
 
       const dateStr =
