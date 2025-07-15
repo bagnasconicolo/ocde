@@ -411,7 +411,7 @@ window.addEventListener("load", () => {
               return out;
             };
 
-            const drawCps = (w) => {
+              const drawCps = (w) => {
               const vals = movingAvg(cpsArr, w);
               Plotly.newPlot(
                 plotCpsDiv,
@@ -424,14 +424,7 @@ window.addEventListener("load", () => {
                     mode: "lines",
                     line: {
                       width: 2,
-                      color: vals,
-                      colorscale: [
-                        [0, "rgb(0,255,0)"],
-                        [0.5, "rgb(255,255,0)"],
-                        [1, "rgb(255,0,0)"],
-                      ],
-                      cmin: Math.min(...vals),
-                      cmax: Math.max(...vals),
+                      color,
                     },
                   },
                 ],
@@ -452,7 +445,7 @@ window.addEventListener("load", () => {
               document.getElementById(`valCps-${uid}`).textContent = w;
             };
 
-            const drawDose = (w) => {
+              const drawDose = (w) => {
               const vals = movingAvg(dosesArr, w);
               Plotly.newPlot(
                 plotDoseDiv,
@@ -465,14 +458,7 @@ window.addEventListener("load", () => {
                     mode: "lines",
                     line: {
                       width: 2,
-                      color: vals,
-                      colorscale: [
-                        [0, "rgb(0,255,0)"],
-                        [0.5, "rgb(255,255,0)"],
-                        [1, "rgb(255,0,0)"],
-                      ],
-                      cmin: Math.min(...vals),
-                      cmax: Math.max(...vals),
+                      color,
                     },
                   },
                 ],
