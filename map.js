@@ -368,7 +368,7 @@ window.addEventListener("load", () => {
                     x,
                     y: vals,
                     name: "CPS",
-                    type: "scattergl",
+                    type: "scatter",
                     mode: "lines",
                     line: {
                       width: 2,
@@ -408,7 +408,7 @@ window.addEventListener("load", () => {
                     x,
                     y: vals,
                     name: "Dose (µSv/h)",
-                    type: "scattergl",
+                    type: "scatter",
                     mode: "lines",
                     line: {
                       width: 2,
