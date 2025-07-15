@@ -240,7 +240,8 @@ window.addEventListener("load", () => {
         const sliderDoseId = `slider-dose-${uid}`;
 
         line.on("click", () => {
-          const filtered = filterByDate(pts);
+          let filtered = filterByDate(pts);
+          if (!filtered.length) filtered = pts;
           const stats = computeStats(filtered);
           trackPopupContent.innerHTML = `
             <button id='trackPopupClose' class='absolute top-2 right-2 text-gray-300 hover:text-white'>✕</button>
@@ -366,7 +367,7 @@ window.addEventListener("load", () => {
                     x,
                     y: vals,
                     name: "CPS",
-                    type: "scatter",
+                    type: "scattergl",
                     mode: "lines",
                     line: {
                       width: 2,
@@ -406,7 +407,7 @@ window.addEventListener("load", () => {
                     x,
                     y: vals,
                     name: "Dose (µSv/h)",
-                    type: "scatter",
+                    type: "scattergl",
                     mode: "lines",
                     line: {
                       width: 2,
