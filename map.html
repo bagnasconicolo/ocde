@@ -276,6 +276,23 @@
           return `rgb(${r},${g},0)`;
         };
 
+        const animateCounter = (el, value, decimals = 0) => {
+          if (!el) return;
+          const duration = 600;
+          const step = 16;
+          const steps = duration / step;
+          let current = 0;
+          const inc = value / steps;
+          const timer = setInterval(() => {
+            current += inc;
+            if (current >= value) {
+              current = value;
+              clearInterval(timer);
+            }
+            el.textContent = current.toFixed(decimals);
+          }, step);
+        };
+
         /* ------------------ MAIN LOAD ------------------ */
         (async () => {
           const files = await fetchTrackList();
@@ -335,10 +352,38 @@
                   <button id='trackPopupClose' class='absolute top-2 right-2 text-gray-300 hover:text-white'>✕</button>
                   <div class='prose prose-sm prose-invert max-w-none mb-4'>
                     <h3 class='text-lg font-semibold'>${fname.split("/").pop()}</h3>
-                    <p>
-                      <strong>Dose</strong> min ${stats.minDose.toFixed(3)} / avg ${stats.avgDose.toFixed(3)} / max ${stats.maxDose.toFixed(3)} µSv/h<br>
-                      <strong>CPS</strong>  min ${stats.minCps.toFixed(1)} / avg ${stats.avgCps.toFixed(1)} / max ${stats.maxCps.toFixed(1)} cps
-                    </p>
+                  </div>
+                  <div class='grid grid-cols-3 gap-2 sm:gap-4 mb-4 text-center text-xs sm:text-sm'>
+                    <div class='bg-gray-900/40 p-2 rounded-lg shadow'>
+                      <div class='text-gray-400'>Dose min</div>
+                      <div id='stat-min-dose-${uid}' class='text-lg font-semibold text-sky-400'>0</div>
+                      <div class='text-gray-400'>µSv/h</div>
+                    </div>
+                    <div class='bg-gray-900/40 p-2 rounded-lg shadow'>
+                      <div class='text-gray-400'>Dose avg</div>
+                      <div id='stat-avg-dose-${uid}' class='text-lg font-semibold text-sky-400'>0</div>
+                      <div class='text-gray-400'>µSv/h</div>
+                    </div>
+                    <div class='bg-gray-900/40 p-2 rounded-lg shadow'>
+                      <div class='text-gray-400'>Dose max</div>
+                      <div id='stat-max-dose-${uid}' class='text-lg font-semibold text-sky-400'>0</div>
+                      <div class='text-gray-400'>µSv/h</div>
+                    </div>
+                    <div class='bg-gray-900/40 p-2 rounded-lg shadow'>
+                      <div class='text-gray-400'>CPS min</div>
+                      <div id='stat-min-cps-${uid}' class='text-lg font-semibold text-amber-400'>0</div>
+                      <div class='text-gray-400'>cps</div>
+                    </div>
+                    <div class='bg-gray-900/40 p-2 rounded-lg shadow'>
+                      <div class='text-gray-400'>CPS avg</div>
+                      <div id='stat-avg-cps-${uid}' class='text-lg font-semibold text-amber-400'>0</div>
+                      <div class='text-gray-400'>cps</div>
+                    </div>
+                    <div class='bg-gray-900/40 p-2 rounded-lg shadow'>
+                      <div class='text-gray-400'>CPS max</div>
+                      <div id='stat-max-cps-${uid}' class='text-lg font-semibold text-amber-400'>0</div>
+                      <div class='text-gray-400'>cps</div>
+                    </div>
                   </div>
                   <div class='grid md:grid-cols-2 md:grid-rows-2 gap-4 text-white'>
                     <div class='bg-gray-900/40 p-4 rounded-lg shadow'>
@@ -366,6 +411,37 @@
                   .addEventListener("click", () =>
                     trackPopup.classList.add("hidden")
                   );
+
+                animateCounter(
+                  document.getElementById(`stat-min-dose-${uid}`),
+                  stats.minDose,
+                  3
+                );
+                animateCounter(
+                  document.getElementById(`stat-avg-dose-${uid}`),
+                  stats.avgDose,
+                  3
+                );
+                animateCounter(
+                  document.getElementById(`stat-max-dose-${uid}`),
+                  stats.maxDose,
+                  3
+                );
+                animateCounter(
+                  document.getElementById(`stat-min-cps-${uid}`),
+                  stats.minCps,
+                  1
+                );
+                animateCounter(
+                  document.getElementById(`stat-avg-cps-${uid}`),
+                  stats.avgCps,
+                  1
+                );
+                animateCounter(
+                  document.getElementById(`stat-max-cps-${uid}`),
+                  stats.maxCps,
+                  1
+                );
 
                 setTimeout(() => {
                   const plotCpsDiv = document.getElementById(plotCpsId);
