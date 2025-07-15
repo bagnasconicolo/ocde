@@ -43,6 +43,13 @@
       strong {
         color: #fffbfb; /* brighter bold */
       }
+      .leaflet-control-coordinate {
+        background: rgba(31, 41, 55, 0.8);
+        color: #fff;
+        padding: 2px 6px;
+        border-radius: 0.25rem;
+        font-size: 0.75rem;
+      }
     </style>
   </head>
   <body class="bg-gray-900 text-gray-200 pt-14">
@@ -91,6 +98,8 @@
             <option value="dark">Dark</option>
             <option value="light">Light</option>
             <option value="topo">Topographic</option>
+            <option value="osm">OSM</option>
+            <option value="hot">OSM HOT</option>
           </select>
         </div>
         <div>
@@ -151,6 +160,14 @@
                 "Map data &copy; OpenStreetMap contributors, SRTM | Map style &copy; OpenTopoMap (CC-BY-SA)",
             }
           ),
+          osm: L.tileLayer(
+            "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+            { maxZoom: 19, attribution: "&copy; OpenStreetMap contributors" }
+          ),
+          hot: L.tileLayer(
+            "https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png",
+            { maxZoom: 20, attribution: "&copy; OpenStreetMap contributors, HOT" }
+          ),
         };
         let currentBase = baseLayers.dark.addTo(map);
         document.getElementById("basemapSelect").addEventListener("change", (e) => {
@@ -161,6 +178,19 @@
           }
         });
         L.control.zoom({ position: "bottomleft" }).addTo(map);
+        L.control.scale({ position: "bottomleft" }).addTo(map);
+        L.control.attribution({ position: "bottomright" }).addTo(map);
+
+        const coordsControl = L.control({ position: "bottomright" });
+        coordsControl.onAdd = function () {
+          this._div = L.DomUtil.create("div", "leaflet-control-coordinate");
+          this._div.innerHTML = "Lat: -- Lon: --";
+          return this._div;
+        };
+        coordsControl.addTo(map);
+        map.on("mousemove", (e) => {
+          coordsControl._div.innerHTML = `Lat: ${e.latlng.lat.toFixed(5)} Lon: ${e.latlng.lng.toFixed(5)}`;
+        });
 
         /* ------------------ STATE ------------------ */
         const allPoints = [];
