@@ -56,6 +56,9 @@
         border-radius: 0.25rem;
         font-size: 0.75rem;
       }
+      #legend {
+        pointer-events: none;
+      }
     </style>
   </head>
   <body class="bg-gray-900 text-gray-200 pt-14">
@@ -76,6 +79,17 @@
     >
       ☰
     </button>
+    <div
+      id="legend"
+      class="fixed bottom-24 right-4 bg-gray-800/80 text-gray-100 p-2 rounded-md text-xs z-[1000] hidden"
+    >
+      <div id="legend-label" class="text-center mb-1">Dose (µSv/h)</div>
+      <div id="legend-bar" class="h-2 w-32 rounded mb-1" style="background: linear-gradient(to right, green, red);"></div>
+      <div class="flex justify-between">
+        <span id="legend-min">0</span>
+        <span id="legend-max">0</span>
+      </div>
+    </div>
     <div class="flex h-screen">
       <div id="map" class="flex-1"></div>
       <aside
@@ -583,14 +597,17 @@
 
         /* ------------------ DOT RENDER ------------------ */
         function drawDots() {
+          const legend = document.getElementById("legend");
           if (trackView) {
             pointLayer.clearLayers();
+            legend.classList.add("hidden");
             return;
           }
           const metric = document.getElementById("metricSelect").value;
           const visiblePoints = allPoints.filter((p) => tracks[p.fname]?.visible);
           if (!visiblePoints.length) {
             pointLayer.clearLayers();
+            legend.classList.add("hidden");
             return;
           }
           const vals = visiblePoints.map((p) =>
@@ -598,6 +615,20 @@
           );
           const min = Math.min(...vals);
           const max = Math.max(...vals);
+
+          const legendLabel = document.getElementById("legend-label");
+          const legendBar = document.getElementById("legend-bar");
+          const legendMin = document.getElementById("legend-min");
+          const legendMax = document.getElementById("legend-max");
+          const decimals = metric === "dose" ? 3 : 1;
+          legendLabel.textContent =
+            metric === "dose" ? "Dose (µSv/h)" : "Counts (cps)";
+          legendMin.textContent = min.toFixed(decimals);
+          legendMax.textContent = max.toFixed(decimals);
+          const cMin = colorScale(min, min, max);
+          const cMax = colorScale(max, min, max);
+          legendBar.style.background = `linear-gradient(to right, ${cMin}, ${cMax})`;
+          legend.classList.remove("hidden");
 
           pointLayer.clearLayers();
           visiblePoints.forEach((p) => {
