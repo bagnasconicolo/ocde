@@ -7,15 +7,7 @@
     <script src="https://cdn.tailwindcss.com?plugins=typography" defer></script>
   </head>
   <body class="bg-gray-900 text-gray-200 pt-14">
-    <nav class="bg-gray-800 text-gray-100 fixed top-0 left-0 right-0 z-50">
-      <div class="max-w-5xl mx-auto px-4 py-3 flex justify-between items-center">
-        <a href="index.html" class="font-bold">OCDE</a>
-        <div class="space-x-4">
-          <a href="map.html" class="hover:underline">Map</a>
-          <a href="about.html" class="hover:underline">About Us</a>
-        </div>
-      </div>
-    </nav>
+    <div id="nav-placeholder"></div>
     <main class="max-w-5xl mx-auto p-4 prose prose-invert">
       <h1>About Us</h1>
       <h2>About our team</h2>
@@ -37,5 +29,10 @@
       <p>The base of operations will be a rented house roughly in the middle of all the exploration sites, where we will set up a small laboratory to do proper measurements and experiments while on mission.</p>
       <p>The exact locations of the sites we are going to survey are visible at this link: <a href="https://umap.openstreetmap.fr/en/map/operazione-emivita_1249984#10/44.3209/7.6094">map</a>. Please note that the exact locations could be inaccurate since the map is for travel planning purposes only, and the territory we will survey is located in the surrounding areas.</p>
     </main>
+    <script>
+      fetch("nav.html").then(r => r.text()).then(html => {
+        document.getElementById("nav-placeholder").outerHTML = html;
+      });
+    </script>
   </body>
 </html>
