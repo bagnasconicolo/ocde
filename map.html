@@ -41,7 +41,13 @@
         width: 500px; /* bigger popup */
       }
       strong {
-        color: #fffbfb; /* brighter bold */
+        color: #fffbfb;
+      }
+      .prose {
+        color: #ffffff;
+      }
+      .prose strong {
+        color: #ffffff;
       }
       .leaflet-control-coordinate {
         background: rgba(31, 41, 55, 0.8);
@@ -327,7 +333,7 @@
               line.on("click", () => {
                 trackPopupContent.innerHTML = `
                   <button id='trackPopupClose' class='absolute top-2 right-2 text-gray-300 hover:text-white'>✕</button>
-                  <div class='prose prose-sm dark:prose-invert max-w-none mb-4'>
+                  <div class='prose prose-sm prose-invert max-w-none mb-4'>
                     <h3 class='text-lg font-semibold'>${fname.split("/").pop()}</h3>
                     <p>
                       <strong>Dose</strong> min ${stats.minDose.toFixed(3)} / avg ${stats.avgDose.toFixed(3)} / max ${stats.maxDose.toFixed(3)} µSv/h<br>
@@ -531,7 +537,7 @@
             }).addTo(pointLayer);
 
             marker.bindPopup(
-              `<div class='prose prose-sm dark:prose-invert text-white'>` +
+              `<div class='prose prose-sm prose-invert'>` +
                 `<strong>Dose:</strong> ${p.dose.toFixed(3)} µSv/h<br>` +
                 `<strong>CPS:</strong> ${p.cps.toFixed(1)} cps` +
                 `</div>`
