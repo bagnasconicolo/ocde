@@ -336,6 +336,18 @@
           );
         };
 
+        const checkTimes = () => {
+          const start = startTimeInput.valueAsNumber;
+          const end = endTimeInput.valueAsNumber;
+          if (!isNaN(start) && !isNaN(end) && start > end) {
+            const tmp = startTimeInput.value;
+            startTimeInput.value = endTimeInput.value;
+            endTimeInput.value = tmp;
+            return true;
+          }
+          return false;
+        };
+
         const computeStats = (pts) => {
           if (!pts.length)
             return {
@@ -752,8 +764,14 @@
           drawDots();
         });
 
-        startTimeInput.addEventListener("change", drawDots);
-        endTimeInput.addEventListener("change", drawDots);
+        startTimeInput.addEventListener("change", () => {
+          checkTimes();
+          drawDots();
+        });
+        endTimeInput.addEventListener("change", () => {
+          checkTimes();
+          drawDots();
+        });
 
         trackViewToggle.addEventListener("change", () => {
           trackView = trackViewToggle.checked;
