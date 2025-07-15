@@ -143,6 +143,7 @@
             class="bg-gray-700 border border-gray-600 rounded-md px-2 py-1 w-full focus:outline-none"
           />
         </div>
+        <div id="errorMessage" class="text-red-400 text-sm hidden"></div>
 
       </aside>
       <!-- Full screen track popup -->
@@ -238,6 +239,7 @@
         const trackViewToggle = document.getElementById("trackViewToggle");
         const startTimeInput = document.getElementById("startTime");
         const endTimeInput = document.getElementById("endTime");
+        const errorMessage = document.getElementById("errorMessage");
         const trackPopup = document.getElementById("trackPopup");
         const trackPopupContent = document.getElementById("trackPopupContent");
         document
@@ -263,6 +265,9 @@
             return await res.json();
           } catch {
             console.warn("track_index.json missing → fallback list");
+            errorMessage.textContent =
+              "Could not fetch track_index.json, using fallback list.";
+            errorMessage.classList.remove("hidden");
             return FALLBACK_TRACK_FILES;
           }
         };
@@ -661,6 +666,10 @@
               });
             } catch (e) {
               console.warn("skip", fname, e.message);
+              const p = document.createElement("p");
+              p.textContent = `Failed to load ${fname}: ${e.message}`;
+              errorMessage.appendChild(p);
+              errorMessage.classList.remove("hidden");
             }
           }
 
