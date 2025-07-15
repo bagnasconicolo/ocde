@@ -39,11 +39,14 @@ window.addEventListener("load", () => {
     ),
   };
   let currentBase = baseLayers.dark.addTo(map);
+  let baseIsDark = true;
   document.getElementById("basemapSelect").addEventListener("change", (e) => {
     const key = e.target.value;
     if (baseLayers[key]) {
       map.removeLayer(currentBase);
       currentBase = baseLayers[key].addTo(map);
+      baseIsDark = key === "dark";
+      updateTrackColors();
     }
   });
   L.control.zoom({ position: "bottomleft" }).addTo(map);
@@ -65,10 +68,14 @@ window.addEventListener("load", () => {
   const allPoints = [];
   const tracks = {};
   let nextHue = 0;
-  const nextTrackColor = () => {
-    const color = `hsl(${nextHue}, 100%, 50%)`;
+  const trackLightnessDark = 60;
+  const trackLightnessLight = 40;
+  const trackColorForHue = (h) =>
+    `hsl(${h}, 100%, ${baseIsDark ? trackLightnessDark : trackLightnessLight}%)`;
+  const nextTrackHue = () => {
+    const h = nextHue;
     nextHue = (nextHue + 137.508) % 360;
-    return color;
+    return h;
   };
   const pointLayer = L.layerGroup().addTo(map);
   const lineLayer = L.layerGroup().addTo(map);
@@ -194,8 +201,16 @@ window.addEventListener("load", () => {
       maxDose: Math.max(...doses),
       avgCps: cpses.reduce((a, b) => a + b, 0) / cpses.length,
       minCps: Math.min(...cpses),
-      maxCps: Math.max(...cpses),
+    maxCps: Math.max(...cpses),
     };
+  };
+
+  const updateTrackColors = () => {
+    Object.values(tracks).forEach((t) => {
+      const color = trackColorForHue(t.hue);
+      t.line.setStyle({ color });
+      if (t.swatch) t.swatch.style.background = color;
+    });
   };
 
   /* ------------------ MAIN LOAD ------------------ */
@@ -223,18 +238,38 @@ window.addEventListener("load", () => {
 
         // line: connect points in chronological order
         const path = pts.map((p) => [p.lat, p.lon]);
-        const color = nextTrackColor();
+        const hue = nextTrackHue();
+        const color = trackColorForHue(hue);
         const line = L.polyline(path, {
           color,
           weight: 3,
           opacity: 0.7,
         });
-        tracks[fname] = { points: pts, line, visible: true, color };
         const li = document.createElement("li");
-        li.innerHTML =
-          `<label class='flex items-center gap-2 text-gray-200'><input type='checkbox' class='trackCheck accent-blue-500' data-file='${fname}' checked><span class='inline-block w-3 h-3 rounded-full' style='background:${color}'></span> ${fname.split("/").pop()}</label>`;
-
+        const label = document.createElement("label");
+        label.className = "flex items-center gap-2 text-gray-200";
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.className = "trackCheck accent-blue-500";
+        checkbox.dataset.file = fname;
+        checkbox.checked = true;
+        const swatch = document.createElement("span");
+        swatch.className = "inline-block w-3 h-3 rounded-full";
+        swatch.style.background = color;
+        label.appendChild(checkbox);
+        label.appendChild(swatch);
+        label.appendChild(document.createTextNode(" " + fname.split("/").pop()));
+        li.appendChild(label);
         trackListElem.appendChild(li);
+
+        tracks[fname] = {
+          points: pts,
+          line,
+          visible: true,
+          hue,
+          swatch,
+        };
+
 
 
 
