@@ -83,6 +83,17 @@
           </select>
         </div>
         <div>
+          <label for="basemapSelect" class="block mb-1 font-medium">Map style</label>
+          <select
+            id="basemapSelect"
+            class="bg-gray-700 border border-gray-600 rounded-md px-2 py-1 w-full focus:outline-none"
+          >
+            <option value="dark">Dark</option>
+            <option value="light">Light</option>
+            <option value="topo">Topographic</option>
+          </select>
+        </div>
+        <div>
           <label class="flex items-center gap-2 text-gray-200" for="trackViewToggle">
             <input type="checkbox" id="trackViewToggle" class="accent-blue-500" /> Track view
           </label>
@@ -123,13 +134,32 @@
           renderer: L.canvas(),
         }).setView([20, 0], 2);
 
-        L.tileLayer(
-          "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
-          {
-            maxZoom: 20,
-            attribution: "&copy; OpenStreetMap & CartoDB",
+        const baseLayers = {
+          dark: L.tileLayer(
+            "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+            { maxZoom: 20, attribution: "&copy; OpenStreetMap & CartoDB" }
+          ),
+          light: L.tileLayer(
+            "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+            { maxZoom: 20, attribution: "&copy; OpenStreetMap & CartoDB" }
+          ),
+          topo: L.tileLayer(
+            "https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",
+            {
+              maxZoom: 17,
+              attribution:
+                "Map data &copy; OpenStreetMap contributors, SRTM | Map style &copy; OpenTopoMap (CC-BY-SA)",
+            }
+          ),
+        };
+        let currentBase = baseLayers.dark.addTo(map);
+        document.getElementById("basemapSelect").addEventListener("change", (e) => {
+          const key = e.target.value;
+          if (baseLayers[key]) {
+            map.removeLayer(currentBase);
+            currentBase = baseLayers[key].addTo(map);
           }
-        ).addTo(map);
+        });
         L.control.zoom({ position: "bottomleft" }).addTo(map);
 
         /* ------------------ STATE ------------------ */
