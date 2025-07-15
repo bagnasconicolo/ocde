@@ -742,15 +742,32 @@
               p.date && !isNaN(p.date)
                 ? new Date(p.date * 1000).toLocaleString()
                 : "N/A";
-            let popupHtml =
-              `<div class='prose prose-sm prose-invert'>` +
-              `<strong>Date:</strong> ${dateStr}<br>` +
-              `<strong>Dose:</strong> ${p.dose.toFixed(3)} µSv/h<br>` +
-              `<strong>CPS:</strong> ${p.cps.toFixed(1)} cps`;
-            if (Number.isFinite(p.energy) && p.energy > 0) {
-              popupHtml += `<br><strong>Energy:</strong> ${p.energy.toFixed(1)} keV`;
-            }
-            popupHtml += `</div>`;
+              const hasEnergy = Number.isFinite(p.energy) && p.energy > 0;
+              const cols = hasEnergy ? 3 : 2;
+              let popupHtml = `<div class='prose prose-sm prose-invert'>`;
+              popupHtml +=
+                `<div class='grid grid-cols-${cols} gap-2 text-center text-xs'>` +
+                `<div class='bg-gray-900/40 p-2 rounded-lg shadow'>` +
+                `<div class='text-gray-400'>Dose</div>` +
+                `<div class='text-lg font-semibold text-sky-400'>${p.dose.toFixed(3)}</div>` +
+                `<div class='text-gray-400'>µSv/h</div>` +
+                `</div>` +
+                `<div class='bg-gray-900/40 p-2 rounded-lg shadow'>` +
+                `<div class='text-gray-400'>CPS</div>` +
+                `<div class='text-lg font-semibold text-amber-400'>${p.cps.toFixed(1)}</div>` +
+                `<div class='text-gray-400'>cps</div>` +
+                `</div>`;
+              if (hasEnergy) {
+                popupHtml +=
+                  `<div class='bg-gray-900/40 p-2 rounded-lg shadow'>` +
+                  `<div class='text-gray-400'>Energy</div>` +
+                  `<div class='text-lg font-semibold text-purple-400'>${p.energy.toFixed(1)}</div>` +
+                  `<div class='text-gray-400'>keV</div>` +
+                  `</div>`;
+              }
+              popupHtml += `</div>`;
+              popupHtml += `<div class='mt-2 text-xs text-gray-400 text-center'>${dateStr}</div>`;
+              popupHtml += `</div>`;
             marker.bindPopup(popupHtml);
           });
         }
