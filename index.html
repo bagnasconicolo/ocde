@@ -12,10 +12,10 @@
     <!-- PapaParse (CSV/TSV) -->
     <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js" defer></script>
 
-    <!-- Plotly (inline charts) -->
+    <!-- Plotly -->
     <script src="https://cdn.plot.ly/plotly-2.32.0.min.js" defer></script>
 
-    <!-- Tailwind CSS -->
+    <!-- Tailwind dark UI -->
     <script src="https://cdn.tailwindcss.com?plugins=typography" defer></script>
 
     <style>
@@ -25,7 +25,7 @@
         height: 100%;
         margin: 0;
       }
-      /* dark pop-ups + white text */
+      /* Bigger, dark pop-ups with high-contrast text */
       .leaflet-popup-content-wrapper {
         background: #1f2937;
         color: #ffffff;
@@ -35,15 +35,19 @@
       .leaflet-popup-tip {
         background: #1f2937;
       }
+      .leaflet-popup-content {
+        width: 400px; /* bigger popup */
+      }
+      strong {
+        color: #fffbfb; /* brighter bold */
+      }
     </style>
   </head>
   <body class="bg-gray-900 text-gray-100">
-    <!-- Map -->
     <div id="map"></div>
 
     <!-- Metric toggle -->
     <div
-      id="ui-panel"
       class="fixed top-4 right-4 bg-gray-800/80 backdrop-blur-sm shadow-xl rounded-2xl px-4 py-3 flex items-center gap-3 z-[1000] text-sm"
     >
       <span class="font-medium">Metric:</span>
@@ -68,7 +72,7 @@
           worldCopyJump: true,
           attributionControl: false,
           zoomControl: false,
-          renderer: L.canvas(), // fast for many circles
+          renderer: L.canvas(),
         }).setView([20, 0], 2);
 
         L.tileLayer(
@@ -81,7 +85,7 @@
         L.control.zoom({ position: "bottomleft" }).addTo(map);
 
         /* ------------------ STATE ------------------ */
-        const allPoints = []; // every sample {lat,lon,dose,cps,fname}
+        const allPoints = [];
         const pointLayer = L.layerGroup().addTo(map);
         const lineLayer = L.layerGroup().addTo(map);
 
@@ -92,13 +96,13 @@
             if (!res.ok) throw new Error();
             return await res.json();
           } catch {
-            console.warn("track-index.json missing – using fallback list");
+            console.warn("track-index.json missing → fallback list");
             return FALLBACK_TRACK_FILES;
           }
         };
 
         const parseFile = (text) => {
-          // JSON (.rctrk)
+          // .rctrk JSON
           try {
             const js = JSON.parse(text);
             if (Array.isArray(js.markers)) {
@@ -108,12 +112,12 @@
                   lon: +m.lon,
                   dose: +(m.doseRate ?? m.dose_uSv_h ?? m.dose ?? 0),
                   cps: +(m.countRate ?? m.cps ?? 0),
+                  energy: +(m.energy ?? m.energyValue ?? m.energy_ev ?? NaN),
                 }))
                 .filter((p) => !isNaN(p.lat) && !isNaN(p.lon));
             }
           } catch (_) {}
-
-          // CSV / TSV fallback
+          // CSV fallback (lat lon dose cps energy?)
           const parsed = Papa.parse(text.trim(), {
             dynamicTyping: true,
             skipEmptyLines: true,
@@ -125,17 +129,18 @@
               lon: +r[1],
               dose: +r[2],
               cps: +r[3],
+              energy: +r[4] || NaN,
             }))
             .filter((p) => !isNaN(p.lat) && !isNaN(p.lon));
         };
 
-        function rgbRamp(val, min, max) {
-          if (val === 0 && max === 0) return "#777"; // never happens but guard
-          const t = (val - min) / (max - min || 1e-9); // 0-1
+        const colorScale = (val, min, max) => {
+          if (val === 0) return "#777"; // zero measurements grey
+          const t = (val - min) / (max - min || 1e-9);
           const r = Math.round(255 * t);
           const g = Math.round(255 * (1 - t));
-          return `rgb(${r},${g},0)`; // green→red
-        }
+          return `rgb(${r},${g},0)`;
+        };
 
         /* ------------------ MAIN LOAD ------------------ */
         (async () => {
@@ -151,13 +156,22 @@
 
               pts.forEach((p) => {
                 p.fname = fname;
-                allPoints.push(p);
                 bounds.push([p.lat, p.lon]);
+                allPoints.push(p);
               });
+
+              // line: connect sequentially (no closing) – original method
+              const path = pts.map((p) => [p.lat, p.lon]);
+              const line = L.polyline(path, {
+                color: "#38bdf8",
+                weight: 3,
+                opacity: 0.4,
+              }).addTo(lineLayer);
 
               // statistics
               const doses = pts.map((p) => p.dose);
               const cpses = pts.map((p) => p.cps);
+              const energies = pts.map((p) => p.energy).filter((v) => !isNaN(v));
               const stats = {
                 avgDose: doses.reduce((a, b) => a + b, 0) / doses.length,
                 minDose: Math.min(...doses),
@@ -167,42 +181,39 @@
                 maxCps: Math.max(...cpses),
               };
 
-              // blue line following actual order
-              const path = pts.map((p) => [p.lat, p.lon]);
-              const line = L.polyline(path, {
-                color: "#38bdf8",
-                weight: 3,
-                opacity: 0.4,
-              }).addTo(lineLayer);
-
-              // build popup with chart + slider
+              // IDs for elements
               const uid = btoa(fname).replace(/[^A-Za-z0-9]/g, "");
               const plotId = `plot-${uid}`;
+              const histId = `hist-${uid}`;
               const sliderId = `slider-${uid}`;
 
               line.on("click", () => {
                 line
                   .bindPopup(
                     `<div class='prose prose-sm dark:prose-invert text-white'>
-                      <h3>${fname.split("/").pop()}</h3>
+                      <h3 class='text-lg'>${fname.split("/").pop()}</h3>
                       <p>
                         <strong>Dose</strong> min ${stats.minDose.toFixed(3)} / avg ${stats.avgDose.toFixed(3)} / max ${stats.maxDose.toFixed(3)} µSv/h<br>
                         <strong>CPS</strong>  min ${stats.minCps.toFixed(1)} / avg ${stats.avgCps.toFixed(1)} / max ${stats.maxCps.toFixed(1)} cps
                       </p>
                       <label class='block text-xs mb-1'>Avg window: <span id='val-${uid}'>1</span></label>
                       <input type='range' min='1' max='50' value='1' id='${sliderId}' class='w-full mb-2'>
-                      <div id='${plotId}' style='width:320px;height:220px;'></div>
-                    </div>`
+                      <div id='${plotId}' style='width:384px;height:220px;'></div>
+                      <h4 class='mt-3 text-sm font-semibold'>Energy histogram</h4>
+                      <div id='${histId}' style='width:384px;height:180px;'></div>
+                    </div>`,
+                    { maxWidth: 420 }
                   )
                   .openPopup();
 
-                // render after popup in DOM
                 setTimeout(() => {
                   const plotDiv = document.getElementById(plotId);
-                  if (!plotDiv) return; // safety
+                  if (!plotDiv) return;
                   const x = [...Array(pts.length).keys()];
+                  const dosesArr = pts.map((p) => p.dose);
+                  const cpsArr = pts.map((p) => p.cps);
 
-                  function movingAvg(arr, w) {
+                  const movingAvg = (arr, w) => {
                     if (w <= 1) return arr;
                     const out = [];
                     let acc = 0;
@@ -212,29 +223,26 @@
                       out.push(acc / Math.min(i + 1, w));
                     }
                     return out;
-                  }
+                  };
 
-                  const doses = pts.map((p) => p.dose);
-                  const cpses = pts.map((p) => p.cps);
-
-                  function draw(w) {
+                  const drawLine = (w) => {
                     Plotly.react(
                       plotDiv,
                       [
                         {
                           x,
-                          y: movingAvg(doses, w),
+                          y: movingAvg(dosesArr, w),
                           name: "Dose (µSv/h)",
                           type: "scatter",
                           line: { width: 2 },
                         },
                         {
                           x,
-                          y: movingAvg(cpses, w),
+                          y: movingAvg(cpsArr, w),
                           name: "CPS",
                           type: "scatter",
                           yaxis: "y2",
-                          line: { width: 2, dash: "dot" },
+                          line: { width: 2 }, // solid line now
                         },
                       ],
                       {
@@ -245,25 +253,52 @@
                         legend: { orientation: "h" },
                         xaxis: { title: "fix #", showgrid: false },
                         yaxis: { title: "µSv/h", showgrid: false },
-                        yaxis2: {
-                          overlaying: "y",
-                          side: "right",
-                          title: "cps",
-                        },
+                        yaxis2: { overlaying: "y", side: "right", title: "cps" },
                       },
                       { displayModeBar: false }
                     );
                     document.getElementById(`val-${uid}`).textContent = w;
+                  };
+
+                  // histogram if energy present
+                  const histDiv = document.getElementById(histId);
+                  if (energies.length) {
+                    Plotly.newPlot(
+                      histDiv,
+                      [
+                        {
+                          x: energies,
+                          type: "histogram",
+                          marker: { color: "#f59e0b" },
+                        },
+                      ],
+                      {
+                        margin: { l: 30, r: 20, t: 10, b: 30 },
+                        paper_bgcolor: "#1f2937",
+                        plot_bgcolor: "#1f2937",
+                        font: { color: "#ffffff", size: 10 },
+                        xaxis: { title: "Energy (keV)", showgrid: false },
+                        yaxis: { title: "freq", showgrid: false },
+                      },
+                      { displayModeBar: false }
+                    );
+                  } else {
+                    histDiv.textContent = "No energy data";
+                    histDiv.style.color = "#ffffffaa";
+                    histDiv.style.fontSize = "11px";
+                    histDiv.style.display = "flex";
+                    histDiv.style.alignItems = "center";
+                    histDiv.style.justifyContent = "center";
+                    histDiv.style.height = "180px";
                   }
 
-                  // initial draw
-                  draw(1);
-                  const slider = document.getElementById(sliderId);
-                  slider.addEventListener("input", () => draw(parseInt(slider.value)));
-                }, 150);
+                  // slider
+                  drawLine(1);
+                  document.getElementById(sliderId).addEventListener("input", (e) => drawLine(parseInt(e.target.value)));
+                }, 120);
               });
             } catch (e) {
-              console.warn("⚠️  skip", fname, e.message);
+              console.warn("skip", fname, e.message);
             }
           }
 
@@ -281,7 +316,7 @@
           pointLayer.clearLayers();
           allPoints.forEach((p) => {
             const valMetric = metric === "dose" ? p.dose : p.cps;
-            const color = p.dose === 0 && p.cps === 0 ? "#777" : rgbRamp(valMetric, min, max);
+            const color = p.dose === 0 && p.cps === 0 ? "#777" : colorScale(valMetric, min, max);
             const marker = L.circleMarker([p.lat, p.lon], {
               radius: 6,
               renderer: map.getRenderer(map),
