@@ -224,11 +224,11 @@
         /* ------------------ HELPERS ------------------ */
         const fetchTrackList = async () => {
           try {
-            const res = await fetch("data/track-index.json");
+            const res = await fetch("data/track_index.json");
             if (!res.ok) throw new Error();
             return await res.json();
           } catch {
-            console.warn("track-index.json missing → fallback list");
+            console.warn("track_index.json missing → fallback list");
             return FALLBACK_TRACK_FILES;
           }
         };
