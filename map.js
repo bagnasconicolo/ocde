@@ -143,9 +143,15 @@ window.addEventListener("load", () => {
 
   const colorScale = (val, min, max) => {
     if (val === 0) return "#777"; // zero measurements grey
-    const t = (val - min) / (max - min || 1e-9);
-    const r = Math.round(255 * t);
-    const g = Math.round(255 * (1 - t));
+    const t = Math.max(0, Math.min(1, (val - min) / (max - min || 1e-9)));
+    let r, g;
+    if (t <= 0.5) {
+      r = Math.round(t * 2 * 255); // green -> yellow
+      g = 255;
+    } else {
+      r = 255;
+      g = Math.round(255 * (1 - (t - 0.5) * 2)); // yellow -> red
+    }
     return `rgb(${r},${g},0)`;
   };
 
@@ -382,6 +388,7 @@ window.addEventListener("load", () => {
                       color: vals,
                       colorscale: [
                         [0, "rgb(0,255,0)"],
+                        [0.5, "rgb(255,255,0)"],
                         [1, "rgb(255,0,0)"],
                       ],
                       cmin: Math.min(...vals),
@@ -422,6 +429,7 @@ window.addEventListener("load", () => {
                       color: vals,
                       colorscale: [
                         [0, "rgb(0,255,0)"],
+                        [0.5, "rgb(255,255,0)"],
                         [1, "rgb(255,0,0)"],
                       ],
                       cmin: Math.min(...vals),
@@ -545,8 +553,9 @@ window.addEventListener("load", () => {
     legendMin.textContent = min.toFixed(decimals);
     legendMax.textContent = max.toFixed(decimals);
     const cMin = colorScale(min, min, max);
+    const cMid = colorScale((min + max) / 2, min, max);
     const cMax = colorScale(max, min, max);
-    legendBar.style.background = `linear-gradient(to right, ${cMin}, ${cMax})`;
+    legendBar.style.background = `linear-gradient(to right, ${cMin}, ${cMid}, ${cMax})`;
     legend.classList.remove("hidden");
 
     pointLayer.clearLayers();
