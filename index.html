@@ -44,6 +44,7 @@
     </style>
   </head>
   <body class="bg-gray-900 text-gray-200">
+
     <button
       id="toggleSidebar"
       class="fixed top-4 left-4 bg-gray-800/80 text-gray-100 p-2 rounded-md md:hidden z-[1001]"
@@ -55,6 +56,7 @@
       <aside
         id="sidebar"
         class="fixed top-0 left-0 h-full w-72 max-w-full bg-gray-800/90 backdrop-blur-md p-4 space-y-4 overflow-y-auto transform -translate-x-full transition-transform z-[1000] md:relative md:translate-x-0 md:w-72 md:bg-opacity-100 text-gray-200"
+
       >
         <h2 class="text-lg font-semibold mb-2">Tracks</h2>
         <ul id="trackList" class="space-y-2 text-sm"></ul>
@@ -73,6 +75,7 @@
             <input type="checkbox" id="trackViewToggle" class="accent-blue-500" /> Track view
           </label>
         </div>
+
       </aside>
     </div>
 
@@ -109,6 +112,7 @@
         const sidebar = document.getElementById("sidebar");
         const trackViewToggle = document.getElementById("trackViewToggle");
         let trackView = false;
+
         document
           .getElementById("toggleSidebar")
           .addEventListener("click", () =>
@@ -197,6 +201,7 @@
               const li = document.createElement("li");
               li.innerHTML =
                 `<label class='flex items-center gap-2 text-gray-200'><input type='checkbox' class='trackCheck accent-blue-500' data-file='${fname}' checked> ${fname.split("/").pop()}</label>`;
+
               trackListElem.appendChild(li);
 
               // statistics
@@ -404,6 +409,7 @@
             lineLayer.clearLayers();
             drawDots();
           }
+
         });
       });
     </script>
