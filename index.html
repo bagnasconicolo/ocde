@@ -5,14 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Radiation Heat-Map</title>
 
-    <!-- Leaflet -->
+    <!-- Leaflet core (no SRI → fewer silent failures) -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
 
-    <!-- Heat-map plugin -->
+    <!-- Leaflet-heat plugin -->
     <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js" defer></script>
 
-    <!-- PapaParse (CSV/TSV) -->
+    <!-- PapaParse for CSV */ JSON fallback parsing -->
     <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js" defer></script>
 
     <!-- Tailwind (dark UI) -->
@@ -31,7 +31,7 @@
     <!-- Map container -->
     <div id="map"></div>
 
-    <!-- Metric toggle (dose ↔ cps) -->
+    <!-- Metric toggle -->
     <div
       id="ui-panel"
       class="fixed top-4 right-4 bg-gray-800/80 backdrop-blur-sm shadow-xl rounded-2xl px-4 py-3 flex items-center gap-3 z-[1000] text-sm"
@@ -49,10 +49,10 @@
     <!-- Main script -->
     <script>
       /* --------------------------------------------------
-       * CONFIGURATION
+       *  CONFIG
        * -------------------------------------------------- */
       const FALLBACK_TRACK_FILES = [
-        "data/Track 11 Jul 2025 22-19-23.rctrk", // adjust / extend
+        "data/Track 11 Jul 2025 22-19-23.rctrk", // adjust as needed
       ];
 
       window.addEventListener("load", () => {
@@ -73,15 +73,16 @@
         L.control.zoom({ position: "bottomleft" }).addTo(map);
 
         /* ------------------ STATE ------------------ */
-        const tracks = []; // arrays of {lat,lon,dose,cps}
+        const points = []; // flat array of {lat,lon,dose,cps}
         const heatLayer = L.heatLayer([], {
           radius: 14,
           blur: 24,
           maxZoom: 18,
+          // colour gradient (blue → red)
           gradient: {
             0: "#2c7bb6",
-            0.35: "#abd9e9",
-            0.6: "#ffffbf",
+            0.3: "#abd9e9",
+            0.55: "#ffffbf",
             0.8: "#fdae61",
             1: "#d7191c",
           },
@@ -100,7 +101,7 @@
         };
 
         const parseFile = (text) => {
-          // try JSON (.rctrk)
+          // JSON (.rctrk)
           try {
             const js = JSON.parse(text);
             if (Array.isArray(js.markers)) {
@@ -115,7 +116,7 @@
             }
           } catch (_) {}
 
-          // fallback CSV/TSV
+          // CSV / TSV fallback
           const parsed = Papa.parse(text.trim(), {
             dynamicTyping: true,
             skipEmptyLines: true,
@@ -132,9 +133,9 @@
         };
 
         /* ------------------ MAIN ------------------ */
-        const loadTracks = async () => {
+        const loadAll = async () => {
           const files = await fetchTrackList();
-          const bounds = [];
+          const allBounds = [];
 
           for (const fname of files) {
             try {
@@ -142,36 +143,41 @@
               if (!res.ok) throw new Error(`HTTP ${res.status}`);
               const pts = parseFile(await res.text());
               if (!pts.length) throw new Error("no data");
-              tracks.push(...pts);
-              pts.forEach((p) => bounds.push([p.lat, p.lon]));
+              points.push(...pts);
+              pts.forEach((p) => allBounds.push([p.lat, p.lon]));
             } catch (e) {
               console.warn("⚠️  skip", fname, e.message);
             }
           }
 
-          if (bounds.length) map.fitBounds(bounds, { padding: [50, 50] });
-          refreshHeatmap();
+          if (allBounds.length) map.fitBounds(allBounds, { padding: [50, 50] });
+          updateHeatmap();
         };
 
-        /* ------------------ HEATMAP ------------------ */
-        const refreshHeatmap = () => {
-          const metric = document.getElementById("metricSelect").value;
-          const values = tracks.map((p) => (metric === "dose" ? p.dose : p.cps));
-          const maxVal = Math.max(...values, 1e-9); // avoid /0
+        /* ------------------ HEATMAP REFRESH ------------------ */
+        function updateHeatmap() {
+          const metric = document.getElementById("metricSelect").value; // 'dose' | 'cps'
 
-          const latlngs = tracks.map((p) => [
+          // Compute global max for current metric → colour scaling
+          const maxVal = Math.max(
+            ...points.map((p) => (metric === "dose" ? p.dose : p.cps)),
+            1e-6 // safety floor
+          );
+          heatLayer.setOptions({ max: maxVal }); // plugin uses value / max
+
+          const latlngs = points.map((p) => [
             p.lat,
             p.lon,
-            (metric === "dose" ? p.dose : p.cps) / maxVal,
+            metric === "dose" ? p.dose : p.cps, // raw absolute value!
           ]);
           heatLayer.setLatLngs(latlngs);
-        };
+        }
 
         document
           .getElementById("metricSelect")
-          .addEventListener("change", refreshHeatmap);
+          .addEventListener("change", updateHeatmap);
 
-        loadTracks();
+        loadAll();
       });
     </script>
   </body>
