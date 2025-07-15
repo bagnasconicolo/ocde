@@ -43,7 +43,8 @@
       }
     </style>
   </head>
-  <body class="bg-gray-900 text-gray-100">
+  <body class="bg-gray-900 text-gray-200">
+
     <button
       id="toggleSidebar"
       class="fixed top-4 left-4 bg-gray-800/80 text-gray-100 p-2 rounded-md md:hidden z-[1001]"
@@ -54,7 +55,8 @@
       <div id="map" class="flex-1"></div>
       <aside
         id="sidebar"
-        class="fixed top-0 left-0 h-full w-72 max-w-full bg-gray-800/90 backdrop-blur-md p-4 space-y-4 overflow-y-auto transform -translate-x-full transition-transform z-[1000] md:relative md:translate-x-0 md:w-72 md:bg-opacity-100"
+        class="fixed top-0 left-0 h-full w-72 max-w-full bg-gray-800/90 backdrop-blur-md p-4 space-y-4 overflow-y-auto transform -translate-x-full transition-transform z-[1000] md:relative md:translate-x-0 md:w-72 md:bg-opacity-100 text-gray-200"
+
       >
         <h2 class="text-lg font-semibold mb-2">Tracks</h2>
         <ul id="trackList" class="space-y-2 text-sm"></ul>
@@ -68,6 +70,12 @@
             <option value="cps">Counts (cps)</option>
           </select>
         </div>
+        <div>
+          <label class="flex items-center gap-2 text-gray-200" for="trackViewToggle">
+            <input type="checkbox" id="trackViewToggle" class="accent-blue-500" /> Track view
+          </label>
+        </div>
+
       </aside>
     </div>
 
@@ -102,6 +110,9 @@
         const lineLayer = L.layerGroup().addTo(map);
         const trackListElem = document.getElementById("trackList");
         const sidebar = document.getElementById("sidebar");
+        const trackViewToggle = document.getElementById("trackViewToggle");
+        let trackView = false;
+
         document
           .getElementById("toggleSidebar")
           .addEventListener("click", () =>
@@ -182,20 +193,20 @@
               // line: connect sequentially (no closing) – original method
               const path = pts.map((p) => [p.lat, p.lon]);
               const line = L.polyline(path, {
-                color: "#38bdf8",
+                color: "#facc15",
                 weight: 3,
-                opacity: 0.4,
-              }).addTo(lineLayer);
+                opacity: 0.7,
+              });
               tracks[fname] = { points: pts, line, visible: true };
               const li = document.createElement("li");
               li.innerHTML =
-                `<label class='flex items-center gap-2'><input type='checkbox' class='trackCheck accent-blue-500' data-file='${fname}' checked> ${fname.split("/").pop()}</label>`;
+                `<label class='flex items-center gap-2 text-gray-200'><input type='checkbox' class='trackCheck accent-blue-500' data-file='${fname}' checked> ${fname.split("/").pop()}</label>`;
+
               trackListElem.appendChild(li);
 
               // statistics
               const doses = pts.map((p) => p.dose);
               const cpses = pts.map((p) => p.cps);
-              const energies = pts.map((p) => p.energy).filter((v) => !isNaN(v));
               const stats = {
                 avgDose: doses.reduce((a, b) => a + b, 0) / doses.length,
                 minDose: Math.min(...doses),
@@ -223,7 +234,7 @@
                       <label class='block text-xs mb-1'>Avg window: <span id='val-${uid}'>1</span></label>
                       <input type='range' min='1' max='50' value='1' id='${sliderId}' class='w-full mb-2'>
                       <div id='${plotId}' style='width:384px;height:220px;'></div>
-                      <h4 class='mt-3 text-sm font-semibold'>Energy histogram</h4>
+                      <h4 class='mt-3 text-sm font-semibold'>Dose/CPS histogram</h4>
                       <div id='${histId}' style='width:384px;height:180px;'></div>
                     </div>`,
                     { maxWidth: 420 }
@@ -284,37 +295,36 @@
                     document.getElementById(`val-${uid}`).textContent = w;
                   };
 
-                  // histogram if energy present
                   const histDiv = document.getElementById(histId);
-                  if (energies.length) {
-                    Plotly.newPlot(
-                      histDiv,
-                      [
-                        {
-                          x: energies,
-                          type: "histogram",
-                          marker: { color: "#f59e0b" },
-                        },
-                      ],
+                  Plotly.newPlot(
+                    histDiv,
+                    [
                       {
-                        margin: { l: 30, r: 20, t: 10, b: 30 },
-                        paper_bgcolor: "#1f2937",
-                        plot_bgcolor: "#1f2937",
-                        font: { color: "#ffffff", size: 10 },
-                        xaxis: { title: "Energy (keV)", showgrid: false },
-                        yaxis: { title: "freq", showgrid: false },
+                        x: dosesArr,
+                        type: "histogram",
+                        opacity: 0.6,
+                        name: "Dose (µSv/h)",
+                        marker: { color: "#38bdf8" },
                       },
-                      { displayModeBar: false }
-                    );
-                  } else {
-                    histDiv.textContent = "No energy data";
-                    histDiv.style.color = "#ffffffaa";
-                    histDiv.style.fontSize = "11px";
-                    histDiv.style.display = "flex";
-                    histDiv.style.alignItems = "center";
-                    histDiv.style.justifyContent = "center";
-                    histDiv.style.height = "180px";
-                  }
+                      {
+                        x: cpsArr,
+                        type: "histogram",
+                        opacity: 0.6,
+                        name: "CPS",
+                        marker: { color: "#f59e0b" },
+                      },
+                    ],
+                    {
+                      barmode: "overlay",
+                      margin: { l: 30, r: 20, t: 10, b: 30 },
+                      paper_bgcolor: "#1f2937",
+                      plot_bgcolor: "#1f2937",
+                      font: { color: "#ffffff", size: 10 },
+                      xaxis: { title: "value", showgrid: false },
+                      yaxis: { title: "freq", showgrid: false },
+                    },
+                    { displayModeBar: false }
+                  );
 
                   // slider
                   drawLine(1);
@@ -332,6 +342,10 @@
 
         /* ------------------ DOT RENDER ------------------ */
         function drawDots() {
+          if (trackView) {
+            pointLayer.clearLayers();
+            return;
+          }
           const metric = document.getElementById("metricSelect").value;
           const visiblePoints = allPoints.filter((p) => tracks[p.fname]?.visible);
           if (!visiblePoints.length) {
@@ -373,12 +387,29 @@
           if (!e.target.dataset.file) return;
           const t = tracks[e.target.dataset.file];
           t.visible = e.target.checked;
-          if (t.visible) {
-            lineLayer.addLayer(t.line);
-          } else {
-            lineLayer.removeLayer(t.line);
+          if (trackView) {
+            if (t.visible) {
+              lineLayer.addLayer(t.line);
+            } else {
+              lineLayer.removeLayer(t.line);
+            }
           }
           drawDots();
+        });
+
+        trackViewToggle.addEventListener("change", () => {
+          trackView = trackViewToggle.checked;
+          if (trackView) {
+            pointLayer.clearLayers();
+            lineLayer.clearLayers();
+            Object.values(tracks).forEach((t) => {
+              if (t.visible) lineLayer.addLayer(t.line);
+            });
+          } else {
+            lineLayer.clearLayers();
+            drawDots();
+          }
+
         });
       });
     </script>
