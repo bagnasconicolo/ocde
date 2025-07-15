@@ -170,7 +170,8 @@ window.addEventListener("load", () => {
   };
 
   const computeStats = (pts) => {
-    if (!pts.length)
+    const filtered = pts.filter((p) => p.dose !== 0 || p.cps !== 0);
+    if (!filtered.length)
       return {
         avgDose: 0,
         minDose: 0,
@@ -179,8 +180,8 @@ window.addEventListener("load", () => {
         minCps: 0,
         maxCps: 0,
       };
-    const doses = pts.map((p) => p.dose);
-    const cpses = pts.map((p) => p.cps);
+    const doses = filtered.map((p) => p.dose);
+    const cpses = filtered.map((p) => p.cps);
     return {
       avgDose: doses.reduce((a, b) => a + b, 0) / doses.length,
       minDose: Math.min(...doses),
@@ -519,9 +520,11 @@ window.addEventListener("load", () => {
       legend.classList.add("hidden");
       return;
     }
-    const vals = visiblePoints.map((p) =>
-      metric === "dose" ? p.dose : p.cps
+    const filteredVals = visiblePoints.filter(
+      (p) => p.dose !== 0 || p.cps !== 0
     );
+    const sample = filteredVals.length ? filteredVals : visiblePoints;
+    const vals = sample.map((p) => (metric === "dose" ? p.dose : p.cps));
     const min = Math.min(...vals);
     const max = Math.max(...vals);
 
