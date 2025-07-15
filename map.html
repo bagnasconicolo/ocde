@@ -38,7 +38,7 @@
         background: #1f2937;
       }
       .leaflet-popup-content {
-        width: 400px; /* bigger popup */
+        width: 500px; /* bigger popup */
       }
       strong {
         color: #fffbfb; /* brighter bold */
@@ -107,7 +107,7 @@
       >
         <div
           id="trackPopupContent"
-          class="relative bg-gray-800 text-white p-4 overflow-auto max-w-4xl max-h-full w-full rounded-lg"
+          class="relative bg-gray-800 text-white p-4 overflow-auto max-w-6xl max-h-full w-full rounded-lg"
         >
           <button
             id="trackPopupClose"
@@ -284,27 +284,39 @@
 
               // IDs for elements
               const uid = btoa(fname).replace(/[^A-Za-z0-9]/g, "");
-              const plotId = `plot-${uid}`;
-              const histId = `hist-${uid}`;
-              const sliderId = `slider-${uid}`;
+              const plotCpsId = `plot-cps-${uid}`;
+              const histCpsId = `hist-cps-${uid}`;
+              const sliderCpsId = `slider-cps-${uid}`;
+              const plotDoseId = `plot-dose-${uid}`;
+              const histDoseId = `hist-dose-${uid}`;
+              const sliderDoseId = `slider-dose-${uid}`;
 
               line.on("click", () => {
                 trackPopupContent.innerHTML = `
                   <button id='trackPopupClose' class='absolute top-2 right-2 text-gray-300 hover:text-white'>✕</button>
-                  <div class='grid md:grid-cols-2 gap-4 text-white'>
+                  <h3 class='text-lg font-semibold mb-2'>${fname.split("/").pop()}</h3>
+                  <p class='mb-4'>
+                    <strong>Dose</strong> min ${stats.minDose.toFixed(3)} / avg ${stats.avgDose.toFixed(3)} / max ${stats.maxDose.toFixed(3)} µSv/h<br>
+                    <strong>CPS</strong>  min ${stats.minCps.toFixed(1)} / avg ${stats.avgCps.toFixed(1)} / max ${stats.maxCps.toFixed(1)} cps
+                  </p>
+                  <div class='grid md:grid-cols-2 md:grid-rows-2 gap-4 text-white'>
                     <div>
-                      <h3 class='text-lg font-semibold mb-2'>${fname.split("/").pop()}</h3>
-                      <p class='mb-2'>
-                        <strong>Dose</strong> min ${stats.minDose.toFixed(3)} / avg ${stats.avgDose.toFixed(3)} / max ${stats.maxDose.toFixed(3)} µSv/h<br>
-                        <strong>CPS</strong>  min ${stats.minCps.toFixed(1)} / avg ${stats.avgCps.toFixed(1)} / max ${stats.maxCps.toFixed(1)} cps
-                      </p>
-                      <label class='block text-xs mb-1'>Avg window: <span id='val-${uid}'>1</span></label>
-                      <input type='range' min='1' max='50' value='1' id='${sliderId}' class='w-full mb-2'>
-                      <div id='${plotId}' class='w-full h-72'></div>
+                      <label class='block text-xs mb-1'>CPS Avg window: <span id='valCps-${uid}'>1</span></label>
+                      <input type='range' min='1' max='50' value='1' id='${sliderCpsId}' class='w-full mb-2'>
+                      <div id='${plotCpsId}' class='w-full h-96'></div>
                     </div>
                     <div>
-                      <h4 class='text-sm font-semibold mb-2'>Dose/CPS histogram</h4>
-                      <div id='${histId}' class='w-full h-72'></div>
+                      <h4 class='text-sm font-semibold mb-2'>CPS histogram</h4>
+                      <div id='${histCpsId}' class='w-full h-96'></div>
+                    </div>
+                    <div>
+                      <label class='block text-xs mb-1'>Dose Avg window: <span id='valDose-${uid}'>1</span></label>
+                      <input type='range' min='1' max='50' value='1' id='${sliderDoseId}' class='w-full mb-2'>
+                      <div id='${plotDoseId}' class='w-full h-96'></div>
+                    </div>
+                    <div>
+                      <h4 class='text-sm font-semibold mb-2'>Dose histogram</h4>
+                      <div id='${histDoseId}' class='w-full h-96'></div>
                     </div>
                   </div>`;
                 trackPopup.classList.remove("hidden");
@@ -315,8 +327,9 @@
                   );
 
                 setTimeout(() => {
-                  const plotDiv = document.getElementById(plotId);
-                  if (!plotDiv) return;
+                  const plotCpsDiv = document.getElementById(plotCpsId);
+                  const plotDoseDiv = document.getElementById(plotDoseId);
+                  if (!plotCpsDiv || !plotDoseDiv) return;
                   const x = [...Array(pts.length).keys()];
                   const dosesArr = pts.map((p) => p.dose);
                   const cpsArr = pts.map((p) => p.cps);
@@ -333,9 +346,38 @@
                     return out;
                   };
 
-                  const drawLine = (w) => {
+                  const drawCps = (w) => {
                     Plotly.react(
-                      plotDiv,
+                      plotCpsDiv,
+                      [
+                        {
+                          x,
+                          y: movingAvg(cpsArr, w),
+                          name: "CPS",
+                          type: "scatter",
+                          line: { width: 2 },
+                        },
+                      ],
+                      {
+                        margin: { l: 40, r: 40, t: 10, b: 30 },
+                        paper_bgcolor: "#1f2937",
+                        plot_bgcolor: "#1f2937",
+                        font: { color: "#ffffff", size: 10 },
+                        xaxis: {
+                          title: "fix #",
+                          showgrid: false,
+                          rangeslider: { visible: true },
+                        },
+                        yaxis: { title: "cps", showgrid: false },
+                      },
+                      { responsive: true, displaylogo: false }
+                    );
+                    document.getElementById(`valCps-${uid}`).textContent = w;
+                  };
+
+                  const drawDose = (w) => {
+                    Plotly.react(
+                      plotDoseDiv,
                       [
                         {
                           x,
@@ -344,68 +386,73 @@
                           type: "scatter",
                           line: { width: 2 },
                         },
-                        {
-                          x,
-                          y: movingAvg(cpsArr, w),
-                          name: "CPS",
-                          type: "scatter",
-                          yaxis: "y2",
-                          line: { width: 2 }, // solid line now
-                        },
                       ],
                       {
                         margin: { l: 40, r: 40, t: 10, b: 30 },
                         paper_bgcolor: "#1f2937",
                         plot_bgcolor: "#1f2937",
                         font: { color: "#ffffff", size: 10 },
-                        legend: { orientation: "h" },
                         xaxis: {
                           title: "fix #",
                           showgrid: false,
                           rangeslider: { visible: true },
                         },
                         yaxis: { title: "µSv/h", showgrid: false },
-                        yaxis2: { overlaying: "y", side: "right", title: "cps" },
                       },
                       { responsive: true, displaylogo: false }
                     );
-                    document.getElementById(`val-${uid}`).textContent = w;
+                    document.getElementById(`valDose-${uid}`).textContent = w;
                   };
 
-                  const histDiv = document.getElementById(histId);
+                  const histCpsDiv = document.getElementById(histCpsId);
                   Plotly.newPlot(
-                    histDiv,
+                    histCpsDiv,
                     [
-                      {
-                        x: dosesArr,
-                        type: "histogram",
-                        opacity: 0.6,
-                        name: "Dose (µSv/h)",
-                        marker: { color: "#38bdf8" },
-                      },
                       {
                         x: cpsArr,
                         type: "histogram",
                         opacity: 0.6,
-                        name: "CPS",
                         marker: { color: "#f59e0b" },
                       },
                     ],
                     {
-                      barmode: "overlay",
                       margin: { l: 30, r: 20, t: 10, b: 30 },
                       paper_bgcolor: "#1f2937",
                       plot_bgcolor: "#1f2937",
                       font: { color: "#ffffff", size: 10 },
-                      xaxis: { title: "value", showgrid: false },
+                      xaxis: { title: "cps", showgrid: false },
                       yaxis: { title: "freq", showgrid: false },
                     },
                     { responsive: true, displaylogo: false }
                   );
 
-                  // slider
-                  drawLine(1);
-                  document.getElementById(sliderId).addEventListener("input", (e) => drawLine(parseInt(e.target.value)));
+                  const histDoseDiv = document.getElementById(histDoseId);
+                  Plotly.newPlot(
+                    histDoseDiv,
+                    [
+                      {
+                        x: dosesArr,
+                        type: "histogram",
+                        opacity: 0.6,
+                        marker: { color: "#38bdf8" },
+                      },
+                    ],
+                    {
+                      margin: { l: 30, r: 20, t: 10, b: 30 },
+                      paper_bgcolor: "#1f2937",
+                      plot_bgcolor: "#1f2937",
+                      font: { color: "#ffffff", size: 10 },
+                      xaxis: { title: "µSv/h", showgrid: false },
+                      yaxis: { title: "freq", showgrid: false },
+                    },
+                    { responsive: true, displaylogo: false }
+                  );
+
+                  // sliders
+                  drawCps(1);
+                  drawDose(1);
+                  document.getElementById(sliderCpsId).addEventListener("input", (e) => drawCps(parseInt(e.target.value)));
+                  document.getElementById(sliderDoseId).addEventListener("input", (e) => drawDose(parseInt(e.target.value)));
                 }, 120);
               });
             } catch (e) {
