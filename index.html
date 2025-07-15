@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Radiation Point‑Intensity Map</title>
+    <title>Radiation Point-Intensity Map</title>
 
     <!-- Leaflet core -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -12,7 +12,10 @@
     <!-- PapaParse (CSV/TSV) -->
     <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js" defer></script>
 
-    <!-- Tailwind CSS (dark UI) -->
+    <!-- Plotly (inline charts) -->
+    <script src="https://cdn.plot.ly/plotly-2.32.0.min.js" defer></script>
+
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com?plugins=typography" defer></script>
 
     <style>
@@ -22,10 +25,10 @@
         height: 100%;
         margin: 0;
       }
-      /* dark pop‑ups */
+      /* dark pop-ups + white text */
       .leaflet-popup-content-wrapper {
         background: #1f2937;
-        color: #f3f4f6;
+        color: #ffffff;
         border-radius: 0.75rem;
         box-shadow: 0 8px 16px rgba(0, 0, 0, 0.6);
       }
@@ -35,7 +38,7 @@
     </style>
   </head>
   <body class="bg-gray-900 text-gray-100">
-    <!-- Map container -->
+    <!-- Map -->
     <div id="map"></div>
 
     <!-- Metric toggle -->
@@ -54,11 +57,9 @@
     </div>
 
     <script>
-      /* --------------------------------------------------
-       * CONFIG
-       * -------------------------------------------------- */
+      /* ------------------ CONFIG ------------------ */
       const FALLBACK_TRACK_FILES = [
-        "data/Track 11 Jul 2025 22-19-23.rctrk", // adjust / extend
+        "data/Track 11 Jul 2025 22-19-23.rctrk",
       ];
 
       window.addEventListener("load", () => {
@@ -67,7 +68,7 @@
           worldCopyJump: true,
           attributionControl: false,
           zoomControl: false,
-          renderer: L.canvas({ tolerance: 2 }), // canvas renderer for thousands of circles
+          renderer: L.canvas(), // fast for many circles
         }).setView([20, 0], 2);
 
         L.tileLayer(
@@ -80,7 +81,7 @@
         L.control.zoom({ position: "bottomleft" }).addTo(map);
 
         /* ------------------ STATE ------------------ */
-        const allPoints = []; // flat array of every {lat,lon,dose,cps,fname}
+        const allPoints = []; // every sample {lat,lon,dose,cps,fname}
         const pointLayer = L.layerGroup().addTo(map);
         const lineLayer = L.layerGroup().addTo(map);
 
@@ -128,32 +129,15 @@
             .filter((p) => !isNaN(p.lat) && !isNaN(p.lon));
         };
 
-        /**
-         * Greedy nearest‑neighbour path (O(n²)) – good enough for small GPS tracks.
-         * Returns array of [lat,lon].
-         */
-        function buildNearestPath(pts) {
-          if (pts.length < 2) return pts.map((p) => [p.lat, p.lon]);
-          const remaining = pts.slice();
-          const ordered = [remaining.shift()];
-          while (remaining.length) {
-            let bestIdx = 0,
-              bestDist = Infinity;
-            remaining.forEach((p, i) => {
-              const d =
-                Math.pow(p.lat - ordered[ordered.length - 1].lat, 2) +
-                Math.pow(p.lon - ordered[ordered.length - 1].lon, 2);
-              if (d < bestDist) {
-                bestDist = d;
-                bestIdx = i;
-              }
-            });
-            ordered.push(remaining.splice(bestIdx, 1)[0]);
-          }
-          return ordered.map((p) => [p.lat, p.lon]);
+        function rgbRamp(val, min, max) {
+          if (val === 0 && max === 0) return "#777"; // never happens but guard
+          const t = (val - min) / (max - min || 1e-9); // 0-1
+          const r = Math.round(255 * t);
+          const g = Math.round(255 * (1 - t));
+          return `rgb(${r},${g},0)`; // green→red
         }
 
-        /* ------------------ MAIN LOADER ------------------ */
+        /* ------------------ MAIN LOAD ------------------ */
         (async () => {
           const files = await fetchTrackList();
           const bounds = [];
@@ -165,38 +149,118 @@
               const pts = parseFile(await res.text());
               if (!pts.length) throw new Error("no data");
 
-              // enrich with filename so we can filter later if needed
-              pts.forEach((p) => (p.fname = fname));
-              allPoints.push(...pts);
-              pts.forEach((p) => bounds.push([p.lat, p.lon]));
+              pts.forEach((p) => {
+                p.fname = fname;
+                allPoints.push(p);
+                bounds.push([p.lat, p.lon]);
+              });
 
-              // stats for popup
+              // statistics
               const doses = pts.map((p) => p.dose);
               const cpses = pts.map((p) => p.cps);
-              const avgDose = doses.reduce((a, b) => a + b, 0) / doses.length;
-              const peakDose = Math.max(...doses);
-              const avgCps = cpses.reduce((a, b) => a + b, 0) / cpses.length;
-              const peakCps = Math.max(...cpses);
+              const stats = {
+                avgDose: doses.reduce((a, b) => a + b, 0) / doses.length,
+                minDose: Math.min(...doses),
+                maxDose: Math.max(...doses),
+                avgCps: cpses.reduce((a, b) => a + b, 0) / cpses.length,
+                minCps: Math.min(...cpses),
+                maxCps: Math.max(...cpses),
+              };
 
-              // build nearest‑neighbour path and add polyline
-              const pathLatLng = buildNearestPath(pts);
-              const trackLine = L.polyline(pathLatLng, {
+              // blue line following actual order
+              const path = pts.map((p) => [p.lat, p.lon]);
+              const line = L.polyline(path, {
                 color: "#38bdf8",
                 weight: 3,
                 opacity: 0.4,
               }).addTo(lineLayer);
 
-              trackLine.on("click", () => {
-                trackLine
-                  .bindPopup(`
-                    <div class='prose prose-sm dark:prose-invert'>
+              // build popup with chart + slider
+              const uid = btoa(fname).replace(/[^A-Za-z0-9]/g, "");
+              const plotId = `plot-${uid}`;
+              const sliderId = `slider-${uid}`;
+
+              line.on("click", () => {
+                line
+                  .bindPopup(
+                    `<div class='prose prose-sm dark:prose-invert text-white'>
                       <h3>${fname.split("/").pop()}</h3>
-                      <p><strong>Avg dose:</strong> ${avgDose.toFixed(3)} µSv/h<br>
-                         <strong>Peak dose:</strong> ${peakDose.toFixed(3)} µSv/h</p>
-                      <p><strong>Avg cps:</strong> ${avgCps.toFixed(1)} cps<br>
-                         <strong>Peak cps:</strong> ${peakCps.toFixed(1)} cps</p>
-                    </div>`)
+                      <p>
+                        <strong>Dose</strong> min ${stats.minDose.toFixed(3)} / avg ${stats.avgDose.toFixed(3)} / max ${stats.maxDose.toFixed(3)} µSv/h<br>
+                        <strong>CPS</strong>  min ${stats.minCps.toFixed(1)} / avg ${stats.avgCps.toFixed(1)} / max ${stats.maxCps.toFixed(1)} cps
+                      </p>
+                      <label class='block text-xs mb-1'>Avg window: <span id='val-${uid}'>1</span></label>
+                      <input type='range' min='1' max='50' value='1' id='${sliderId}' class='w-full mb-2'>
+                      <div id='${plotId}' style='width:320px;height:220px;'></div>
+                    </div>`
+                  )
                   .openPopup();
+
+                // render after popup in DOM
+                setTimeout(() => {
+                  const plotDiv = document.getElementById(plotId);
+                  if (!plotDiv) return; // safety
+                  const x = [...Array(pts.length).keys()];
+
+                  function movingAvg(arr, w) {
+                    if (w <= 1) return arr;
+                    const out = [];
+                    let acc = 0;
+                    for (let i = 0; i < arr.length; i++) {
+                      acc += arr[i];
+                      if (i >= w) acc -= arr[i - w];
+                      out.push(acc / Math.min(i + 1, w));
+                    }
+                    return out;
+                  }
+
+                  const doses = pts.map((p) => p.dose);
+                  const cpses = pts.map((p) => p.cps);
+
+                  function draw(w) {
+                    Plotly.react(
+                      plotDiv,
+                      [
+                        {
+                          x,
+                          y: movingAvg(doses, w),
+                          name: "Dose (µSv/h)",
+                          type: "scatter",
+                          line: { width: 2 },
+                        },
+                        {
+                          x,
+                          y: movingAvg(cpses, w),
+                          name: "CPS",
+                          type: "scatter",
+                          yaxis: "y2",
+                          line: { width: 2, dash: "dot" },
+                        },
+                      ],
+                      {
+                        margin: { l: 40, r: 40, t: 10, b: 30 },
+                        paper_bgcolor: "#1f2937",
+                        plot_bgcolor: "#1f2937",
+                        font: { color: "#ffffff", size: 10 },
+                        legend: { orientation: "h" },
+                        xaxis: { title: "fix #", showgrid: false },
+                        yaxis: { title: "µSv/h", showgrid: false },
+                        yaxis2: {
+                          overlaying: "y",
+                          side: "right",
+                          title: "cps",
+                        },
+                      },
+                      { displayModeBar: false }
+                    );
+                    document.getElementById(`val-${uid}`).textContent = w;
+                  }
+
+                  // initial draw
+                  draw(1);
+                  const slider = document.getElementById(sliderId);
+                  slider.addEventListener("input", () => draw(parseInt(slider.value)));
+                }, 150);
               });
             } catch (e) {
               console.warn("⚠️  skip", fname, e.message);
@@ -207,36 +271,28 @@
           drawDots();
         })();
 
-        /* ------------------ RENDERING ------------------ */
-        function valueToRGB(val, min, max) {
-          const t = (val - min) / (max - min || 1e-9); // 0→1
-          const r = Math.round(255 * t);
-          const g = Math.round(255 * (1 - t));
-          return `rgb(${r},${g},0)`; // green→red
-        }
-
+        /* ------------------ DOT RENDER ------------------ */
         function drawDots() {
           const metric = document.getElementById("metricSelect").value;
           const vals = allPoints.map((p) => (metric === "dose" ? p.dose : p.cps));
-          const minVal = Math.min(...vals);
-          const maxVal = Math.max(...vals);
+          const min = Math.min(...vals);
+          const max = Math.max(...vals);
 
           pointLayer.clearLayers();
           allPoints.forEach((p) => {
-            const val = metric === "dose" ? p.dose : p.cps;
-            const color = valueToRGB(val, minVal, maxVal);
+            const valMetric = metric === "dose" ? p.dose : p.cps;
+            const color = p.dose === 0 && p.cps === 0 ? "#777" : rgbRamp(valMetric, min, max);
             const marker = L.circleMarker([p.lat, p.lon], {
-              radius: 6, // larger
+              radius: 6,
               renderer: map.getRenderer(map),
               fillColor: color,
               color: color,
-              fillOpacity: 0.6, // slightly less opaque
+              fillOpacity: 0.5,
               weight: 0,
             }).addTo(pointLayer);
 
-            // Instantaneous values popup
             marker.bindPopup(
-              `<div class='prose prose-sm dark:prose-invert'>` +
+              `<div class='prose prose-sm dark:prose-invert text-white'>` +
                 `<strong>Dose:</strong> ${p.dose.toFixed(3)} µSv/h<br>` +
                 `<strong>CPS:</strong> ${p.cps.toFixed(1)} cps` +
                 `</div>`
@@ -244,9 +300,7 @@
           });
         }
 
-        document
-          .getElementById("metricSelect")
-          .addEventListener("change", drawDots);
+        document.getElementById("metricSelect").addEventListener("change", drawDots);
       });
     </script>
   </body>
