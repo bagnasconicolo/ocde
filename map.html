@@ -34,6 +34,10 @@
         border-radius: 0.75rem;
         box-shadow: 0 8px 16px rgba(0, 0, 0, 0.6);
       }
+      /* Ensure Leaflet popups appear above the menu bar */
+      .leaflet-popup-pane {
+        z-index: 1200;
+      }
       .leaflet-popup-tip {
         background: #1f2937;
       }
@@ -147,7 +151,7 @@
       <!-- Full screen track popup -->
       <div
         id="trackPopup"
-        class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden z-[1002] flex items-center justify-center p-4"
+        class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden z-[1201] flex items-center justify-center p-4"
       >
         <div
           id="trackPopupContent"
