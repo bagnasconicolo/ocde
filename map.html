@@ -116,7 +116,7 @@
       >
         <div
           id="trackPopupContent"
-          class="relative bg-gray-800 text-white p-4 overflow-auto max-w-6xl max-h-full w-full rounded-lg"
+          class="relative bg-gradient-to-br from-gray-800 to-gray-700 text-white p-6 overflow-auto max-w-6xl max-h-full w-full rounded-xl shadow-2xl ring-1 ring-gray-500/50"
         >
           <button
             id="trackPopupClose"
@@ -281,6 +281,7 @@
               if (!res.ok) throw new Error(`HTTP ${res.status}`);
               const pts = parseFile(await res.text());
               if (!pts.length) throw new Error("no data");
+              pts.sort((a, b) => a.date - b.date);
 
               pts.forEach((p) => {
                 p.fname = fname;
@@ -289,8 +290,7 @@
               });
 
               // line: connect points in chronological order
-              const sorted = [...pts].sort((a, b) => a.date - b.date);
-              const path = sorted.map((p) => [p.lat, p.lon]);
+              const path = pts.map((p) => [p.lat, p.lon]);
               const line = L.polyline(path, {
                 color: "#facc15",
                 weight: 3,
@@ -327,27 +327,29 @@
               line.on("click", () => {
                 trackPopupContent.innerHTML = `
                   <button id='trackPopupClose' class='absolute top-2 right-2 text-gray-300 hover:text-white'>✕</button>
-                  <h3 class='text-lg font-semibold mb-2'>${fname.split("/").pop()}</h3>
-                  <p class='mb-4'>
-                    <strong>Dose</strong> min ${stats.minDose.toFixed(3)} / avg ${stats.avgDose.toFixed(3)} / max ${stats.maxDose.toFixed(3)} µSv/h<br>
-                    <strong>CPS</strong>  min ${stats.minCps.toFixed(1)} / avg ${stats.avgCps.toFixed(1)} / max ${stats.maxCps.toFixed(1)} cps
-                  </p>
+                  <div class='prose prose-sm dark:prose-invert max-w-none mb-4'>
+                    <h3 class='text-lg font-semibold'>${fname.split("/").pop()}</h3>
+                    <p>
+                      <strong>Dose</strong> min ${stats.minDose.toFixed(3)} / avg ${stats.avgDose.toFixed(3)} / max ${stats.maxDose.toFixed(3)} µSv/h<br>
+                      <strong>CPS</strong>  min ${stats.minCps.toFixed(1)} / avg ${stats.avgCps.toFixed(1)} / max ${stats.maxCps.toFixed(1)} cps
+                    </p>
+                  </div>
                   <div class='grid md:grid-cols-2 md:grid-rows-2 gap-4 text-white'>
-                    <div>
+                    <div class='bg-gray-900/40 p-4 rounded-lg shadow'>
                       <label class='block text-xs mb-1'>CPS Avg window: <span id='valCps-${uid}'>1</span></label>
-                      <input type='range' min='1' max='50' value='1' id='${sliderCpsId}' class='w-full mb-2'>
+                      <input type='range' min='1' max='50' value='1' id='${sliderCpsId}' class='w-full mb-2 accent-teal-500'>
                       <div id='${plotCpsId}' class='w-full h-96'></div>
                     </div>
-                    <div>
+                    <div class='bg-gray-900/40 p-4 rounded-lg shadow'>
                       <h4 class='text-sm font-semibold mb-2'>CPS histogram</h4>
                       <div id='${histCpsId}' class='w-full h-96'></div>
                     </div>
-                    <div>
+                    <div class='bg-gray-900/40 p-4 rounded-lg shadow'>
                       <label class='block text-xs mb-1'>Dose Avg window: <span id='valDose-${uid}'>1</span></label>
-                      <input type='range' min='1' max='50' value='1' id='${sliderDoseId}' class='w-full mb-2'>
+                      <input type='range' min='1' max='50' value='1' id='${sliderDoseId}' class='w-full mb-2 accent-teal-500'>
                       <div id='${plotDoseId}' class='w-full h-96'></div>
                     </div>
-                    <div>
+                    <div class='bg-gray-900/40 p-4 rounded-lg shadow'>
                       <h4 class='text-sm font-semibold mb-2'>Dose histogram</h4>
                       <div id='${histDoseId}' class='w-full h-96'></div>
                     </div>
