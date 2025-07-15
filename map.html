@@ -127,6 +127,22 @@
             <input type="checkbox" id="trackViewToggle" class="accent-blue-500" /> Track view
           </label>
         </div>
+        <div>
+          <label for="startTime" class="block mb-1 font-medium">Start time</label>
+          <input
+            type="datetime-local"
+            id="startTime"
+            class="bg-gray-700 border border-gray-600 rounded-md px-2 py-1 w-full focus:outline-none"
+          />
+        </div>
+        <div>
+          <label for="endTime" class="block mb-1 font-medium">End time</label>
+          <input
+            type="datetime-local"
+            id="endTime"
+            class="bg-gray-700 border border-gray-600 rounded-md px-2 py-1 w-full focus:outline-none"
+          />
+        </div>
 
       </aside>
       <!-- Full screen track popup -->
@@ -220,6 +236,8 @@
         const trackListElem = document.getElementById("trackList");
         const sidebar = document.getElementById("sidebar");
         const trackViewToggle = document.getElementById("trackViewToggle");
+        const startTimeInput = document.getElementById("startTime");
+        const endTimeInput = document.getElementById("endTime");
         const trackPopup = document.getElementById("trackPopup");
         const trackPopupContent = document.getElementById("trackPopupContent");
         document
@@ -228,6 +246,8 @@
             trackPopup.classList.add("hidden")
           );
         let trackView = false;
+        let globalMinDate = Infinity;
+        let globalMaxDate = -Infinity;
 
         document
           .getElementById("toggleSidebar")
@@ -307,6 +327,37 @@
           }, step);
         };
 
+        const filterByDate = (points) => {
+          if (globalMinDate === Infinity) return points;
+          const start = startTimeInput.valueAsNumber || globalMinDate * 1000;
+          const end = endTimeInput.valueAsNumber || globalMaxDate * 1000;
+          return points.filter(
+            (p) => p.date * 1000 >= start && p.date * 1000 <= end
+          );
+        };
+
+        const computeStats = (pts) => {
+          if (!pts.length)
+            return {
+              avgDose: 0,
+              minDose: 0,
+              maxDose: 0,
+              avgCps: 0,
+              minCps: 0,
+              maxCps: 0,
+            };
+          const doses = pts.map((p) => p.dose);
+          const cpses = pts.map((p) => p.cps);
+          return {
+            avgDose: doses.reduce((a, b) => a + b, 0) / doses.length,
+            minDose: Math.min(...doses),
+            maxDose: Math.max(...doses),
+            avgCps: cpses.reduce((a, b) => a + b, 0) / cpses.length,
+            minCps: Math.min(...cpses),
+            maxCps: Math.max(...cpses),
+          };
+        };
+
         /* ------------------ MAIN LOAD ------------------ */
         (async () => {
           const files = await fetchTrackList();
@@ -324,6 +375,10 @@
                 p.fname = fname;
                 bounds.push([p.lat, p.lon]);
                 allPoints.push(p);
+                if (p.date) {
+                  globalMinDate = Math.min(globalMinDate, p.date);
+                  globalMaxDate = Math.max(globalMaxDate, p.date);
+                }
               });
 
               // line: connect points in chronological order
@@ -340,17 +395,7 @@
 
               trackListElem.appendChild(li);
 
-              // statistics
-              const doses = pts.map((p) => p.dose);
-              const cpses = pts.map((p) => p.cps);
-              const stats = {
-                avgDose: doses.reduce((a, b) => a + b, 0) / doses.length,
-                minDose: Math.min(...doses),
-                maxDose: Math.max(...doses),
-                avgCps: cpses.reduce((a, b) => a + b, 0) / cpses.length,
-                minCps: Math.min(...cpses),
-                maxCps: Math.max(...cpses),
-              };
+
 
               // IDs for elements
               const uid = btoa(fname).replace(/[^A-Za-z0-9]/g, "");
@@ -362,6 +407,8 @@
               const sliderDoseId = `slider-dose-${uid}`;
 
               line.on("click", () => {
+                const filtered = filterByDate(pts);
+                const stats = computeStats(filtered);
                 trackPopupContent.innerHTML = `
                   <button id='trackPopupClose' class='absolute top-2 right-2 text-gray-300 hover:text-white'>✕</button>
                   <div class='prose prose-sm prose-invert max-w-none mb-4'>
@@ -461,9 +508,9 @@
                   const plotCpsDiv = document.getElementById(plotCpsId);
                   const plotDoseDiv = document.getElementById(plotDoseId);
                   if (!plotCpsDiv || !plotDoseDiv) return;
-                  const x = [...Array(pts.length).keys()];
-                  const dosesArr = pts.map((p) => p.dose);
-                  const cpsArr = pts.map((p) => p.cps);
+                  const x = [...Array(filtered.length).keys()];
+                  const dosesArr = filtered.map((p) => p.dose);
+                  const cpsArr = filtered.map((p) => p.cps);
 
                   const movingAvg = (arr, w) => {
                     if (w <= 1) return arr;
@@ -592,6 +639,10 @@
           }
 
           if (bounds.length) map.fitBounds(bounds, { padding: [50, 50] });
+          if (globalMinDate !== Infinity) {
+            startTimeInput.valueAsNumber = globalMinDate * 1000;
+            endTimeInput.valueAsNumber = globalMaxDate * 1000;
+          }
           drawDots();
         })();
 
@@ -604,7 +655,9 @@
             return;
           }
           const metric = document.getElementById("metricSelect").value;
-          const visiblePoints = allPoints.filter((p) => tracks[p.fname]?.visible);
+          const visiblePoints = filterByDate(allPoints).filter(
+            (p) => tracks[p.fname]?.visible
+          );
           if (!visiblePoints.length) {
             pointLayer.clearLayers();
             legend.classList.add("hidden");
@@ -676,6 +729,9 @@
           }
           drawDots();
         });
+
+        startTimeInput.addEventListener("change", drawDots);
+        endTimeInput.addEventListener("change", drawDots);
 
         trackViewToggle.addEventListener("change", () => {
           trackView = trackViewToggle.checked;
