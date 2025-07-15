@@ -44,20 +44,31 @@
     </style>
   </head>
   <body class="bg-gray-900 text-gray-100">
-    <div id="map"></div>
-
-    <!-- Metric toggle -->
-    <div
-      class="fixed top-4 right-4 bg-gray-800/80 backdrop-blur-sm shadow-xl rounded-2xl px-4 py-3 flex items-center gap-3 z-[1000] text-sm"
+    <button
+      id="toggleSidebar"
+      class="fixed top-4 left-4 bg-gray-800/80 text-gray-100 p-2 rounded-md md:hidden z-[1001]"
     >
-      <span class="font-medium">Metric:</span>
-      <select
-        id="metricSelect"
-        class="bg-gray-700 border border-gray-600 rounded-md px-2 py-1 focus:outline-none"
+      ☰
+    </button>
+    <div class="flex h-screen">
+      <div id="map" class="flex-1"></div>
+      <aside
+        id="sidebar"
+        class="fixed top-0 left-0 h-full w-72 max-w-full bg-gray-800/90 backdrop-blur-md p-4 space-y-4 overflow-y-auto transform -translate-x-full transition-transform z-[1000] md:relative md:translate-x-0 md:w-72 md:bg-opacity-100"
       >
-        <option value="dose">Dose (µSv/h)</option>
-        <option value="cps">Counts (cps)</option>
-      </select>
+        <h2 class="text-lg font-semibold mb-2">Tracks</h2>
+        <ul id="trackList" class="space-y-2 text-sm"></ul>
+        <div>
+          <label for="metricSelect" class="block mb-1 font-medium">Metric</label>
+          <select
+            id="metricSelect"
+            class="bg-gray-700 border border-gray-600 rounded-md px-2 py-1 w-full focus:outline-none"
+          >
+            <option value="dose">Dose (µSv/h)</option>
+            <option value="cps">Counts (cps)</option>
+          </select>
+        </div>
+      </aside>
     </div>
 
     <script>
@@ -86,8 +97,16 @@
 
         /* ------------------ STATE ------------------ */
         const allPoints = [];
+        const tracks = {};
         const pointLayer = L.layerGroup().addTo(map);
         const lineLayer = L.layerGroup().addTo(map);
+        const trackListElem = document.getElementById("trackList");
+        const sidebar = document.getElementById("sidebar");
+        document
+          .getElementById("toggleSidebar")
+          .addEventListener("click", () =>
+            sidebar.classList.toggle("-translate-x-full")
+          );
 
         /* ------------------ HELPERS ------------------ */
         const fetchTrackList = async () => {
@@ -167,6 +186,11 @@
                 weight: 3,
                 opacity: 0.4,
               }).addTo(lineLayer);
+              tracks[fname] = { points: pts, line, visible: true };
+              const li = document.createElement("li");
+              li.innerHTML =
+                `<label class='flex items-center gap-2'><input type='checkbox' class='trackCheck accent-blue-500' data-file='${fname}' checked> ${fname.split("/").pop()}</label>`;
+              trackListElem.appendChild(li);
 
               // statistics
               const doses = pts.map((p) => p.dose);
@@ -309,12 +333,19 @@
         /* ------------------ DOT RENDER ------------------ */
         function drawDots() {
           const metric = document.getElementById("metricSelect").value;
-          const vals = allPoints.map((p) => (metric === "dose" ? p.dose : p.cps));
+          const visiblePoints = allPoints.filter((p) => tracks[p.fname]?.visible);
+          if (!visiblePoints.length) {
+            pointLayer.clearLayers();
+            return;
+          }
+          const vals = visiblePoints.map((p) =>
+            metric === "dose" ? p.dose : p.cps
+          );
           const min = Math.min(...vals);
           const max = Math.max(...vals);
 
           pointLayer.clearLayers();
-          allPoints.forEach((p) => {
+          visiblePoints.forEach((p) => {
             const valMetric = metric === "dose" ? p.dose : p.cps;
             const color = p.dose === 0 && p.cps === 0 ? "#777" : colorScale(valMetric, min, max);
             const marker = L.circleMarker([p.lat, p.lon], {
@@ -335,7 +366,20 @@
           });
         }
 
-        document.getElementById("metricSelect").addEventListener("change", drawDots);
+        document
+          .getElementById("metricSelect")
+          .addEventListener("change", drawDots);
+        trackListElem.addEventListener("change", (e) => {
+          if (!e.target.dataset.file) return;
+          const t = tracks[e.target.dataset.file];
+          t.visible = e.target.checked;
+          if (t.visible) {
+            lineLayer.addLayer(t.line);
+          } else {
+            lineLayer.removeLayer(t.line);
+          }
+          drawDots();
+        });
       });
     </script>
   </body>
