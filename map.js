@@ -414,7 +414,7 @@ window.addEventListener("load", () => {
         const histDoseId = `hist-dose-${uid}`;
         const sliderDoseId = `slider-dose-${uid}`;
 
-        line.on("mouseover", () => {
+        line.on("click", () => {
           let filtered = filterByDate(pts);
           if (!filtered.length) filtered = pts;
           const stats = computeStats(filtered);
@@ -652,7 +652,6 @@ window.addEventListener("load", () => {
             document.getElementById(sliderDoseId).addEventListener("input", (e) => drawDose(parseInt(e.target.value)));
           }, 120);
         });
-        line.on("mouseout", () => trackPopup.classList.add("hidden"));
       } catch (e) {
         console.warn("skip", fname, e.message);
       }
