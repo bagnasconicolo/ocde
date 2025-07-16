@@ -253,7 +253,17 @@ window.addEventListener("load", () => {
       if (!c)
         cells.set(
           key,
-          (c = { lat: 0, lon: 0, dose: 0, cps: 0, energy: 0, eCount: 0, count: 0 })
+          (c = {
+            lat: 0,
+            lon: 0,
+            dose: 0,
+            cps: 0,
+            energy: 0,
+            eCount: 0,
+            dateSum: 0,
+            dateCount: 0,
+            count: 0,
+          })
         );
       c.lat += p.lat;
       c.lon += p.lon;
@@ -262,6 +272,10 @@ window.addEventListener("load", () => {
       if (Number.isFinite(p.energy) && p.energy > 0) {
         c.energy += p.energy;
         c.eCount++;
+      }
+      if (p.date && !isNaN(p.date)) {
+        c.dateSum += p.date;
+        c.dateCount++;
       }
       c.count++;
     });
@@ -273,6 +287,7 @@ window.addEventListener("load", () => {
         dose: c.dose / c.count,
         cps: c.cps / c.count,
         energy: c.eCount ? c.energy / c.eCount : NaN,
+        date: c.dateCount ? c.dateSum / c.dateCount : NaN,
       });
     });
     return out;
