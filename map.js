@@ -184,8 +184,8 @@ window.addEventListener("load", () => {
     const t = Math.max(0, Math.min(1, (val - min) / (max - min || 1e-9)));
     let r, g;
     if (t <= 0.5) {
-      r = Math.round(t * 2 * 255); // green -> yellow
-      g = 255;
+      r = Math.round(t * 2 * 255); // dark green -> yellow
+      g = Math.round(128 + t * 2 * 127); // start from darker green
     } else {
       r = 255;
       g = Math.round(255 * (1 - (t - 0.5) * 2)); // yellow -> red
