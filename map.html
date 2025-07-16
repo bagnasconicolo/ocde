@@ -95,6 +95,17 @@
         stroke: rgba(255, 255, 255, 0.3);
         stroke-width: 1px;
       }
+      @media (min-width: 768px) {
+        #sidebar::before {
+          content: "";
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(to bottom right, #1e293b, #0f172a);
+          background-size: cover;
+          pointer-events: none;
+          z-index: -1;
+        }
+
       @keyframes siteGlow {
         0%, 100% { fill-opacity: 0.2; }
         50% { fill-opacity: 0.6; }
@@ -104,6 +115,7 @@
         fill: #2563eb;
         filter: blur(4px);
         animation: siteGlow 2s ease-in-out infinite;
+
       }
     </style>
   </head>
