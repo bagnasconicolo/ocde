@@ -137,7 +137,50 @@
             Sites
             <span class="ml-auto transition-transform group-open:rotate-180">▾</span>
           </summary>
+
           <ul id="siteList" class="mt-2 space-y-2 text-sm"></ul>
+        </details>
+
+        <details class="group bg-gray-700/50 rounded-lg p-2">
+          <summary class="cursor-pointer font-medium flex items-center hover:bg-gray-600/40 rounded transition-colors">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              class="w-4 h-4 mr-1"
+            >
+              <circle cx="12" cy="12" r="10" stroke-linecap="round" stroke-linejoin="round" />
+              <line x1="12" y1="8" x2="12" y2="16" stroke-linecap="round" stroke-linejoin="round" />
+              <line x1="8" y1="12" x2="16" y2="12" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            Site Tools
+            <span class="ml-auto transition-transform group-open:rotate-180">▾</span>
+          </summary>
+          <div class="mt-2 space-y-2">
+            <label class="flex items-center gap-2 text-gray-200 cursor-pointer" for="showSiteCirclesToggle">
+              <input type="checkbox" id="showSiteCirclesToggle" class="sr-only peer" />
+              <div class="w-11 h-6 bg-gray-600 rounded-full peer-checked:bg-blue-600 relative after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"></div>
+              <span>Show range</span>
+            </label>
+            <div>
+              <label for="siteRadiusSlider" class="block mb-1 font-medium">Radius (m): <span id="siteRadiusVal">200</span></label>
+              <input type="range" id="siteRadiusSlider" min="50" max="1000" value="200" step="10" class="w-full accent-blue-500" />
+              <div class="flex gap-2 text-xs mt-1">
+                <div class="flex-1">
+                  <label>Min
+                    <input type="number" id="siteRadiusMin" value="50" class="w-full bg-gray-700 border border-gray-600 rounded px-1 py-0.5" />
+                  </label>
+                </div>
+                <div class="flex-1">
+                  <label>Max
+                    <input type="number" id="siteRadiusMax" value="1000" class="w-full bg-gray-700 border border-gray-600 rounded px-1 py-0.5" />
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
         </details>
 
         <details class="group bg-gray-700/50 rounded-lg p-2">
@@ -422,6 +465,11 @@
         const lineShadowSlider = document.getElementById("lineShadowSlider");
         const showTrackDotsToggle = document.getElementById("showTrackDotsToggle");
         const dotOpacitySlider = document.getElementById("dotOpacitySlider");
+        const showSiteCirclesToggle = document.getElementById("showSiteCirclesToggle");
+        const siteRadiusSlider = document.getElementById("siteRadiusSlider");
+        const siteRadiusVal = document.getElementById("siteRadiusVal");
+        const siteRadiusMin = document.getElementById("siteRadiusMin");
+        const siteRadiusMax = document.getElementById("siteRadiusMax");
         const errorMessage = document.getElementById("errorMessage");
         const trackPopup = document.getElementById("trackPopup");
         const trackPopupContent = document.getElementById("trackPopupContent");
@@ -439,6 +487,9 @@
         let lineShadow = 2;
         let showTrackDots = false;
         let dotOpacity = 0.5;
+        let showSiteCircles = false;
+        let siteRadius = parseFloat(siteRadiusSlider.value);
+        const siteCircles = {};
 
         document
           .getElementById("toggleSidebar")
@@ -699,6 +750,28 @@
           styleElem.textContent = `.track-line, .data-dot { filter: drop-shadow(0 0 ${lineShadow}px #000); }`;
         };
 
+        const computeCircleStats = (lat, lon) => {
+          const pts = filterByDate(allPoints).filter(
+            (p) => map.distance([lat, lon], [p.lat, p.lon]) <= siteRadius
+          );
+          return computeStats(pts);
+        };
+
+        const updateSiteCircles = () => {
+          Object.values(siteCircles).forEach((c) => map.removeLayer(c));
+          Object.keys(siteCircles).forEach((k) => delete siteCircles[k]);
+          if (!showSiteCircles) return;
+          Object.entries(siteMarkers).forEach(([id, m]) => {
+            const c = L.circle(m.getLatLng(), {
+              radius: siteRadius,
+              color: "#2563eb",
+              weight: 1,
+              fillOpacity: 0.05,
+            }).addTo(map);
+            siteCircles[id] = c;
+          });
+        };
+
         const fetchSites = async () => {
           try {
             const res = await fetch("data/sites.json");
@@ -723,7 +796,27 @@
               html += `<img src='${s.images[0]}' class='mt-2 rounded w-32 h-auto'/>`;
             }
             m.bindPopup(html);
-
+            m.on("popupopen", () => {
+              const stats = computeCircleStats(s.lat, s.lon);
+              let content = `<h3 class='font-semibold mb-1'>${s.title ?? ""}</h3>`;
+              if (s.description) content += `<p>${s.description}</p>`;
+              if (Array.isArray(s.images) && s.images[0]) {
+                content += `<img src='${s.images[0]}' class='mt-2 rounded w-32 h-auto'/>`;
+              }
+              content += `<div class='grid grid-cols-2 gap-2 text-center text-xs mt-2'>` +
+                `<div class='bg-gray-900/40 p-2 rounded-lg shadow'>` +
+                `<div class='text-gray-400'>Dose avg</div>` +
+                `<div class='text-lg font-semibold text-sky-400'>${stats.avgDose.toFixed(3)}</div>` +
+                `<div class='text-gray-400'>µSv/h</div>` +
+                `</div>` +
+                `<div class='bg-gray-900/40 p-2 rounded-lg shadow'>` +
+                `<div class='text-gray-400'>CPS avg</div>` +
+                `<div class='text-lg font-semibold text-amber-400'>${stats.avgCps.toFixed(1)}</div>` +
+                `<div class='text-gray-400'>cps</div>` +
+                `</div>` +
+                `</div>`;
+              m.setPopupContent(content);
+            });
 
             const li = document.createElement("li");
             li.className = "flex items-center gap-2 justify-between";
@@ -752,6 +845,7 @@
             m.on("mouseout", () => m.closePopup());
 
           });
+          updateSiteCircles();
         };
 
         /* ------------------ MAIN LOAD ------------------ */
@@ -1284,6 +1378,30 @@
             updateLineStyles();
           }
         });
+        showSiteCirclesToggle.addEventListener("change", (e) => {
+          showSiteCircles = e.target.checked;
+          updateSiteCircles();
+        });
+        const updateRadiusFromInputs = () => {
+          const min = parseFloat(siteRadiusMin.value);
+          const max = parseFloat(siteRadiusMax.value);
+          if (!isNaN(min) && !isNaN(max) && min < max) {
+            siteRadiusSlider.min = min;
+            siteRadiusSlider.max = max;
+          }
+          if (parseFloat(siteRadiusSlider.value) < min) siteRadiusSlider.value = min;
+          if (parseFloat(siteRadiusSlider.value) > max) siteRadiusSlider.value = max;
+          siteRadius = parseFloat(siteRadiusSlider.value);
+          siteRadiusVal.textContent = siteRadius;
+          updateSiteCircles();
+        };
+        siteRadiusSlider.addEventListener("input", () => {
+          siteRadius = parseFloat(siteRadiusSlider.value);
+          siteRadiusVal.textContent = siteRadius;
+          updateSiteCircles();
+        });
+        siteRadiusMin.addEventListener("change", updateRadiusFromInputs);
+        siteRadiusMax.addEventListener("change", updateRadiusFromInputs);
         showTrackDotsToggle.addEventListener("change", (e) => {
           showTrackDots = e.target.checked;
           renderTrackDots();
