@@ -95,6 +95,10 @@
         backdrop-filter: blur(8px) saturate(150%);
         -webkit-backdrop-filter: blur(8px) saturate(150%);
       }
+      #imagePopup {
+        backdrop-filter: blur(8px) saturate(150%);
+        -webkit-backdrop-filter: blur(8px) saturate(150%);
+      }
       .glass-dot {
         stroke: rgba(255, 255, 255, 0.3);
         stroke-width: 1px;
@@ -147,7 +151,29 @@
         <span id="legend-min">0</span>
         <span id="legend-max">0</span>
       </div>
-    </div>
+      </div>
+      <!-- Full screen image gallery popup -->
+      <div
+        id="imagePopup"
+        class="fixed inset-0 bg-black/80 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity z-[1202] flex items-center justify-center p-4"
+      >
+        <div
+          class="relative glass-panel text-white p-4 max-w-3xl w-full rounded-xl shadow-2xl ring-1 ring-gray-500/50"
+        >
+          <button
+            id="imagePopupClose"
+            class="absolute top-2 right-2 text-gray-300 hover:text-white"
+          >
+            ✕
+          </button>
+          <div id="imagePopupCaption" class="prose prose-sm prose-invert mb-4"></div>
+          <div class="relative">
+            <button id="imagePrev" class="absolute left-0 top-1/2 -translate-y-1/2 text-3xl px-2 text-gray-300 hover:text-white">←</button>
+            <img id="imagePopupImg" class="max-h-[70vh] mx-auto rounded" src="" />
+            <button id="imageNext" class="absolute right-0 top-1/2 -translate-y-1/2 text-3xl px-2 text-gray-300 hover:text-white">→</button>
+          </div>
+        </div>
+      </div>
     <div class="flex h-screen">
       <div id="map" class="flex-1"></div>
       <aside
@@ -533,6 +559,34 @@
             trackPopup.classList.add("opacity-0", "pointer-events-none");
             trackPopup.classList.remove("opacity-100");
           });
+        const imagePopup = document.getElementById("imagePopup");
+        const imagePopupImg = document.getElementById("imagePopupImg");
+        const imagePopupCaption = document.getElementById("imagePopupCaption");
+        const imagePopupPrev = document.getElementById("imagePrev");
+        const imagePopupNext = document.getElementById("imageNext");
+        document
+          .getElementById("imagePopupClose")
+          .addEventListener("click", () => {
+            imagePopup.classList.add("opacity-0", "pointer-events-none");
+            imagePopup.classList.remove("opacity-100");
+          });
+        let galleryImages = [];
+        let galleryIndex = 0;
+        const openImagePopup = (images, idx, title, desc) => {
+          galleryImages = images;
+          galleryIndex = idx;
+          imagePopupImg.src = images[idx];
+          imagePopupCaption.innerHTML = `<h3 class='font-semibold mb-1'>${title}</h3>` + (desc ? `<p>${desc}</p>` : "");
+          imagePopup.classList.remove("pointer-events-none", "opacity-0");
+          imagePopup.classList.add("opacity-100");
+        };
+        const showGalleryImage = (dir) => {
+          if (!galleryImages.length) return;
+          galleryIndex = (galleryIndex + dir + galleryImages.length) % galleryImages.length;
+          imagePopupImg.src = galleryImages[galleryIndex];
+        };
+        imagePopupPrev.addEventListener("click", () => showGalleryImage(-1));
+        imagePopupNext.addEventListener("click", () => showGalleryImage(1));
         let trackView = false;
         let globalMinDate = Infinity;
         let globalMaxDate = -Infinity;
@@ -861,18 +915,27 @@
             const id = s.id || `${s.lat},${s.lon}`;
             const m = L.marker([s.lat, s.lon], { icon: siteIcon }).addTo(siteLayer);
             siteMarkers[id] = m;
-            let html = `<h3 class='font-semibold mb-1'>${s.title ?? ""}</h3>`;
+            let html = `<div class='prose prose-sm prose-invert'><h3 class='font-semibold mb-1'>${s.title ?? ""}</h3>`;
             if (s.description) html += `<p>${s.description}</p>`;
-            if (Array.isArray(s.images) && s.images[0]) {
-              html += `<img src='${s.images[0]}' class='mt-2 rounded w-32 h-auto'/>`;
+            if (Array.isArray(s.images) && s.images.length) {
+              html += `<div class='flex gap-2 mt-2 overflow-x-auto'>`;
+              s.images.forEach((img, i) => {
+                html += `<img src='${img}' data-index='${i}' class='site-thumb w-16 h-16 object-cover rounded cursor-pointer'/>`;
+              });
+              html += `</div>`;
             }
+            html += `</div>`;
             m.bindPopup(html);
             m.on("popupopen", () => {
               const stats = computeCircleStats(s.lat, s.lon);
-              let content = `<h3 class='font-semibold mb-1'>${s.title ?? ""}</h3>`;
+              let content = `<div class='prose prose-sm prose-invert'><h3 class='font-semibold mb-1'>${s.title ?? ""}</h3>`;
               if (s.description) content += `<p>${s.description}</p>`;
-              if (Array.isArray(s.images) && s.images[0]) {
-                content += `<img src='${s.images[0]}' class='mt-2 rounded w-32 h-auto'/>`;
+              if (Array.isArray(s.images) && s.images.length) {
+                content += `<div class='flex gap-2 mt-2 overflow-x-auto'>`;
+                s.images.forEach((img, i) => {
+                  content += `<img src='${img}' data-index='${i}' class='site-thumb w-16 h-16 object-cover rounded cursor-pointer'/>`;
+                });
+                content += `</div>`;
               }
               content += `<div class='grid grid-cols-2 gap-2 text-center text-xs mt-2'>` +
                 `<div class='bg-gray-900/40 p-2 rounded-lg shadow'>` +
@@ -885,8 +948,16 @@
                 `<div class='text-lg font-semibold text-amber-400'>${stats.avgCps.toFixed(1)}</div>` +
                 `<div class='text-gray-400'>cps</div>` +
                 `</div>` +
+                `</div>` +
                 `</div>`;
               m.setPopupContent(content);
+              const popupEl = m.getPopup().getElement();
+              popupEl.querySelectorAll('.site-thumb').forEach((imgEl) => {
+                imgEl.addEventListener('click', () => {
+                  const idx = parseInt(imgEl.dataset.index);
+                  openImagePopup(s.images, idx, s.title ?? '', s.description ?? '');
+                });
+              });
             });
 
             const li = document.createElement("li");
