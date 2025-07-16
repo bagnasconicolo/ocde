@@ -4,9 +4,9 @@ const FALLBACK_TRACK_FILES = [
 ];
 
 window.addEventListener("load", () => {
-  const style = document.createElement("style");
-  style.textContent = `.track-line, .data-dot { filter: drop-shadow(0 0 2px #000); }`;
-  document.head.appendChild(style);
+  const styleElem = document.createElement("style");
+  styleElem.textContent = `.track-line, .data-dot { filter: drop-shadow(0 0 2px #000); }`;
+  document.head.appendChild(styleElem);
   /* ------------------ MAP ------------------ */
   const map = L.map("map", {
     worldCopyJump: true,
@@ -89,6 +89,11 @@ window.addEventListener("load", () => {
   const trackViewToggle = document.getElementById("trackViewToggle");
   const startTimeInput = document.getElementById("startTime");
   const endTimeInput = document.getElementById("endTime");
+  const lineStyleBtn = document.getElementById("lineStyleBtn");
+  const lineStylePanel = document.getElementById("lineStylePanel");
+  const lineStyleSelect = document.getElementById("lineStyleSelect");
+  const lineWidthInput = document.getElementById("lineWidthInput");
+  const lineShadowToggle = document.getElementById("lineShadowToggle");
   const trackPopup = document.getElementById("trackPopup");
   const trackPopupContent = document.getElementById("trackPopupContent");
   document
@@ -99,6 +104,9 @@ window.addEventListener("load", () => {
   let trackView = false;
   let globalMinDate = Infinity;
   let globalMaxDate = -Infinity;
+  let lineDash = null;
+  let lineWidth = 3;
+  let lineShadow = true;
 
   document
     .getElementById("toggleSidebar")
@@ -260,6 +268,15 @@ window.addEventListener("load", () => {
     });
   };
 
+  const updateLineStyles = () => {
+    Object.values(tracks).forEach((t) => {
+      t.line.setStyle({ weight: lineWidth, dashArray: lineDash });
+    });
+    styleElem.textContent = `.track-line, .data-dot { filter: ${
+      lineShadow ? "drop-shadow(0 0 2px #000)" : "none"
+    }; }`;
+  };
+
   /* ------------------ MAIN LOAD ------------------ */
   (async () => {
     const files = await fetchTrackList();
@@ -289,7 +306,8 @@ window.addEventListener("load", () => {
         const color = trackColorForHue(hue);
         const line = L.polyline(path, {
           color,
-          weight: 3,
+          weight: lineWidth,
+          dashArray: lineDash,
           opacity: 0.7,
           className: "track-line",
         });
@@ -699,10 +717,30 @@ window.addEventListener("load", () => {
       Object.values(tracks).forEach((t) => {
         if (t.visible) lineLayer.addLayer(t.line);
       });
+      updateLineStyles();
     } else {
       lineLayer.clearLayers();
       drawDots();
     }
 
+  });
+  lineStyleBtn.addEventListener("click", () => {
+    lineStylePanel.classList.toggle("hidden");
+  });
+  lineStyleSelect.addEventListener("change", (e) => {
+    const val = e.target.value;
+    lineDash = val === "solid" ? null : val === "dashed" ? "6 4" : "2 4";
+    updateLineStyles();
+  });
+  lineWidthInput.addEventListener("change", (e) => {
+    const v = parseFloat(e.target.value);
+    if (!isNaN(v) && v > 0) {
+      lineWidth = v;
+      updateLineStyles();
+    }
+  });
+  lineShadowToggle.addEventListener("change", (e) => {
+    lineShadow = e.target.checked;
+    updateLineStyles();
   });
 });
