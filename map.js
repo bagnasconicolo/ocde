@@ -5,7 +5,8 @@ const FALLBACK_TRACK_FILES = [
 
 window.addEventListener("load", () => {
   const styleElem = document.createElement("style");
-  styleElem.textContent = `.track-line, .glass-dot { filter: drop-shadow(0 0 2px #000); }`;
+  styleElem.textContent =
+    `.track-line, .glass-dot { filter: drop-shadow(0 0 2px #000); }\n#trackPopup { backdrop-filter: blur(8px) saturate(150%); -webkit-backdrop-filter: blur(8px) saturate(150%); }`;
   document.head.appendChild(styleElem);
   /* ------------------ MAP ------------------ */
   const map = L.map("map", {
@@ -355,7 +356,8 @@ window.addEventListener("load", () => {
         );
       }
     });
-    styleElem.textContent = `.track-line, .data-dot { filter: drop-shadow(0 0 ${lineShadow}px #000); }`;
+    styleElem.textContent =
+      `.track-line, .data-dot { filter: drop-shadow(0 0 ${lineShadow}px #000); }\n#trackPopup { backdrop-filter: blur(8px) saturate(150%); -webkit-backdrop-filter: blur(8px) saturate(150%); }`;
   };
 
   /* ------------------ MAIN LOAD ------------------ */
