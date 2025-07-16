@@ -98,7 +98,7 @@
 
       >
         <details class="group bg-gray-700/50 rounded-lg p-2">
-          <summary class="cursor-pointer font-medium flex items-center">
+          <summary class="cursor-pointer font-medium flex items-center hover:bg-gray-600/40 rounded transition-colors">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 24 24"
@@ -118,7 +118,7 @@
         </details>
 
         <details class="group bg-gray-700/50 rounded-lg p-2">
-          <summary class="cursor-pointer font-medium flex items-center">
+          <summary class="cursor-pointer font-medium flex items-center hover:bg-gray-600/40 rounded transition-colors">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 24 24"
@@ -188,7 +188,7 @@
         </details>
 
         <details class="group bg-gray-700/50 rounded-lg p-2">
-          <summary class="cursor-pointer font-medium flex items-center">
+          <summary class="cursor-pointer font-medium flex items-center hover:bg-gray-600/40 rounded transition-colors">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 24 24"
@@ -414,16 +414,7 @@
             sidebar.classList.toggle("-translate-x-full")
           );
 
-        sidebar.querySelectorAll("details").forEach((d) => {
-          let pinned = false;
-          d.addEventListener("toggle", (e) => {
-            if (e.isTrusted) pinned = d.open;
-          });
-          d.addEventListener("mouseenter", () => d.setAttribute("open", ""));
-          d.addEventListener("mouseleave", () => {
-            if (!pinned) d.removeAttribute("open");
-          });
-        });
+        /* highlight on hover handled via CSS */
 
         /* ------------------ HELPERS ------------------ */
         const fetchTrackList = async () => {
