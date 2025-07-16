@@ -10,8 +10,8 @@
   {
     "id": "fisica",
     "title": "Physics Dpt. UniTo",
-    "lat": 44.5,
-    "lon": 7.5,
+    "lat": 44.58,
+    "lon": 7.885,
     "description": "Department of Physics at the University of Turin. Home to our group, CHARM, and our HQ.s",
     "images": ["data/images/site1/site1.jpg"]
   }
