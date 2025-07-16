@@ -702,9 +702,13 @@
 
 
             const li = document.createElement("li");
+            li.className = "flex items-center gap-2 justify-between";
             const checkbox = document.createElement("input");
             checkbox.type = "checkbox";
-            checkbox.className = "siteCheck accent-blue-500";
+            const siteHue = nextTrackHue();
+            const siteColor = trackColorForHue(siteHue);
+            checkbox.className = "siteCheck";
+            checkbox.style.accentColor = siteColor;
             checkbox.dataset.id = id;
             checkbox.checked = true;
             const labelElem = document.createElement("label");
@@ -712,6 +716,15 @@
             labelElem.appendChild(checkbox);
             labelElem.appendChild(document.createTextNode(" " + (s.title || id)));
             li.appendChild(labelElem);
+            const btn = document.createElement("button");
+            btn.type = "button";
+            btn.textContent = "↦";
+            btn.className = "text-gray-400 hover:text-white";
+            btn.title = "Go to site";
+            btn.addEventListener("click", () => {
+              map.setView([s.lat, s.lon], 14);
+            });
+            li.appendChild(btn);
             siteListElem.appendChild(li);
 
             m.on("mouseover", () => m.openPopup());
@@ -755,10 +768,12 @@
                 className: "track-line",
               });
               const li = document.createElement("li");
+              li.className = "flex items-center gap-2 justify-between";
               const label = title || fname.split("/").pop();
               const checkbox = document.createElement("input");
               checkbox.type = "checkbox";
-              checkbox.className = "trackCheck accent-blue-500";
+              checkbox.className = "trackCheck";
+              checkbox.style.accentColor = color;
               checkbox.dataset.file = fname;
               checkbox.checked = true;
               const swatch = document.createElement("span");
@@ -770,6 +785,15 @@
               labelElem.appendChild(swatch);
               labelElem.appendChild(document.createTextNode(" " + label));
               li.appendChild(labelElem);
+              const btn = document.createElement("button");
+              btn.type = "button";
+              btn.textContent = "↦";
+              btn.className = "text-gray-400 hover:text-white";
+              btn.title = "Go to track";
+              btn.addEventListener("click", () => {
+                map.fitBounds(line.getBounds().pad(0.2));
+              });
+              li.appendChild(btn);
               trackListElem.appendChild(li);
 
               tracks[fname] = { points: pts, line, visible: true, title, hue, swatch, markerGroup: null };
