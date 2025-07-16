@@ -729,10 +729,7 @@
             li.className = "flex items-center gap-2 justify-between";
             const checkbox = document.createElement("input");
             checkbox.type = "checkbox";
-            const siteHue = nextTrackHue();
-            const siteColor = trackColorForHue(siteHue);
-            checkbox.className = "siteCheck";
-            checkbox.style.accentColor = siteColor;
+            checkbox.className = "siteCheck accent-blue-500";
             checkbox.dataset.id = id;
             checkbox.checked = true;
             const labelElem = document.createElement("label");
@@ -796,8 +793,7 @@
               const label = title || fname.split("/").pop();
               const checkbox = document.createElement("input");
               checkbox.type = "checkbox";
-              checkbox.className = "trackCheck";
-              checkbox.style.accentColor = color;
+              checkbox.className = "trackCheck accent-blue-500";
               checkbox.dataset.file = fname;
               checkbox.checked = true;
               const swatch = document.createElement("span");
