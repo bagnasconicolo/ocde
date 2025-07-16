@@ -38,6 +38,10 @@
           <p class="text-sm text-gray-400 mb-1">Files will be loaded from <code>/data/images/&lt;ID&gt;/</code></p>
           <input id="images" name="images" class="w-full bg-gray-700 rounded px-2 py-1" />
         </div>
+        <div>
+          <label for="references" class="block mb-1">References (comma separated URLs)</label>
+          <input id="references" name="references" class="w-full bg-gray-700 rounded px-2 py-1" />
+        </div>
         <button type="submit" class="bg-blue-600 hover:bg-blue-500 px-4 py-2 rounded">Add/Update</button>
       </form>
       <div>
@@ -70,13 +74,18 @@
             .split(',')
             .map(s => s.trim())
             .filter(Boolean);
+          const references = form.elements.references.value
+            .split(',')
+            .map(s => s.trim())
+            .filter(Boolean);
           const site = {
             id: siteId,
             title: form.elements.title.value.trim(),
             lat: parseFloat(form.elements.lat.value),
             lon: parseFloat(form.elements.lon.value),
             description: form.elements.description.value.trim(),
-            images: imageNames.map(n => `data/images/${siteId}/${n}`)
+            images: imageNames.map(n => `data/images/${siteId}/${n}`),
+            references
           };
           const idx = sites.findIndex(s => s.id === site.id);
           if (idx >= 0) sites[idx] = site; else sites.push(site);
