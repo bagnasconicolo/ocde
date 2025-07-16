@@ -34,7 +34,8 @@
           <textarea id="description" name="description" rows="3" class="w-full bg-gray-700 rounded px-2 py-1"></textarea>
         </div>
         <div>
-          <label for="images" class="block mb-1">Images (comma separated)</label>
+          <label for="images" class="block mb-1">Image filenames (comma separated)</label>
+          <p class="text-sm text-gray-400 mb-1">Files will be loaded from <code>/data/images/&lt;ID&gt;/</code></p>
           <input id="images" name="images" class="w-full bg-gray-700 rounded px-2 py-1" />
         </div>
         <button type="submit" class="bg-blue-600 hover:bg-blue-500 px-4 py-2 rounded">Add/Update</button>
@@ -64,13 +65,18 @@
           .catch(() => {});
         form.addEventListener("submit", e => {
           e.preventDefault();
+          const siteId = form.elements.siteId.value.trim();
+          const imageNames = form.elements.images.value
+            .split(',')
+            .map(s => s.trim())
+            .filter(Boolean);
           const site = {
-            id: form.elements.siteId.value.trim(),
+            id: siteId,
             title: form.elements.title.value.trim(),
             lat: parseFloat(form.elements.lat.value),
             lon: parseFloat(form.elements.lon.value),
             description: form.elements.description.value.trim(),
-            images: form.elements.images.value.split(',').map(s => s.trim()).filter(Boolean)
+            images: imageNames.map(n => `data/images/${siteId}/${n}`)
           };
           const idx = sites.findIndex(s => s.id === site.id);
           if (idx >= 0) sites[idx] = site; else sites.push(site);

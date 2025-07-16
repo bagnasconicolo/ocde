@@ -5,6 +5,6 @@
     "lat": 44.5,
     "lon": 7.5,
     "description": "Short text",
-    "images": ["img/site1.jpg"]
+    "images": ["data/images/site1/site1.jpg"]
   }
 ]
