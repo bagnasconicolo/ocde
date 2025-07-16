@@ -919,28 +919,35 @@
             const m = L.marker([s.lat, s.lon], { icon: siteIcon }).addTo(siteLayer);
             siteMarkers[id] = m;
             let html = `<div class='prose prose-sm prose-invert'><h3 class='font-semibold mb-1'>${s.title ?? ""}</h3>`;
-            if (s.description) html += `<p>${s.description}</p>`;
+            if (s.description) html += `<h4>Description</h4><p>${s.description}</p>`;
             if (Array.isArray(s.images) && s.images.length) {
-              html += `<div class='flex gap-2 mt-2 overflow-x-auto'>`;
+              html += `<h4>Gallery</h4><div class='flex gap-2 mt-2 overflow-x-auto border border-gray-700 rounded p-2 bg-gray-900/40'>`;
               s.images.forEach((img, i) => {
                 html += `<img src='${img}' data-index='${i}' class='site-thumb w-16 h-16 object-cover rounded cursor-pointer'/>`;
               });
               html += `</div>`;
+            }
+            if (Array.isArray(s.references) && s.references.length) {
+              html += `<h4>References</h4><ul>`;
+              s.references.forEach((u) => {
+                html += `<li><a href='${u}' target='_blank' rel='noopener'>${u}</a></li>`;
+              });
+              html += `</ul>`;
             }
             html += `</div>`;
             m.bindPopup(html);
             m.on("popupopen", () => {
               const stats = computeCircleStats(s.lat, s.lon);
               let content = `<div class='prose prose-sm prose-invert'><h3 class='font-semibold mb-1'>${s.title ?? ""}</h3>`;
-              if (s.description) content += `<p>${s.description}</p>`;
+              if (s.description) content += `<h4>Description</h4><p>${s.description}</p>`;
               if (Array.isArray(s.images) && s.images.length) {
-                content += `<div class='flex gap-2 mt-2 overflow-x-auto'>`;
+                content += `<h4>Gallery</h4><div class='flex gap-2 mt-2 overflow-x-auto border border-gray-700 rounded p-2 bg-gray-900/40'>`;
                 s.images.forEach((img, i) => {
                   content += `<img src='${img}' data-index='${i}' class='site-thumb w-16 h-16 object-cover rounded cursor-pointer'/>`;
                 });
                 content += `</div>`;
               }
-              content += `<div class='grid grid-cols-2 gap-2 text-center text-xs mt-2'>` +
+              content += `<h4>Radiation data</h4><div class='grid grid-cols-2 gap-2 text-center text-xs mt-2'>` +
                 `<div class='bg-gray-900/40 p-2 rounded-lg shadow'>` +
                 `<div class='text-gray-400'>Dose avg</div>` +
                 `<div class='text-lg font-semibold text-sky-400'>${stats.avgDose.toFixed(3)}</div>` +
@@ -951,8 +958,15 @@
                 `<div class='text-lg font-semibold text-amber-400'>${stats.avgCps.toFixed(1)}</div>` +
                 `<div class='text-gray-400'>cps</div>` +
                 `</div>` +
-                `</div>` +
                 `</div>`;
+              if (Array.isArray(s.references) && s.references.length) {
+                content += `<h4>References</h4><ul>`;
+                s.references.forEach((u) => {
+                  content += `<li><a href='${u}' target='_blank' rel='noopener'>${u}</a></li>`;
+                });
+                content += `</ul>`;
+              }
+              content += `</div>`;
               m.setPopupContent(content);
               const popupEl = m.getPopup().getElement();
               popupEl.querySelectorAll('.site-thumb').forEach((imgEl) => {

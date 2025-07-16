@@ -7,6 +7,9 @@
     "description": "Short text",
     "images": [
       "data/images/site1/site1.jpg"
+    ],
+    "references": [
+      "https://example.com/site1"
     ]
   },
   {
@@ -19,6 +22,9 @@
       "data/images/fisica/fisica1.jpeg",
       "data/images/fisica/fisica2.png",
       "data/images/fisica/fisica3.jpg"
+    ],
+    "references": [
+      "https://www.ph.unito.it"
     ]
   }
 ]
