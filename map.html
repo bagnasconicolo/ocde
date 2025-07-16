@@ -986,9 +986,15 @@
             li.appendChild(btn);
             siteListElem.appendChild(li);
 
+            let pinned = false;
             m.on("mouseover", () => m.openPopup());
-            m.on("mouseout", () => m.closePopup());
+            m.on("mouseout", () => {
+              if (!pinned) m.closePopup();
+            });
             m.on("click", () => {
+              pinned = !pinned;
+              if (pinned) m.openPopup();
+              else m.closePopup();
               const c = siteCircles[id];
               if (c) triggerGlow(c);
             });
