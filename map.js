@@ -272,40 +272,45 @@ window.addEventListener("load", () => {
       const color = trackColorForHue(t.hue);
       t.line.setStyle({ color });
       if (t.swatch) t.swatch.style.background = color;
-      if (t.markerGroup) {
-        t.markerGroup.eachLayer((m) =>
-          m.setStyle({ color, fillColor: color })
-        );
-      }
     });
   };
 
   const renderTrackDots = () => {
     trackDotLayer.clearLayers();
     if (!(trackView && showTrackDots)) return;
+
+    const metric = document.getElementById("metricSelect").value;
+    const visibleTracks = Object.values(tracks).filter((t) => t.visible);
+    const visiblePoints = visibleTracks.flatMap((t) => filterByDate(t.points));
+    if (!visiblePoints.length) return;
+    const vals = visiblePoints
+      .filter((p) => p.dose !== 0 || p.cps !== 0)
+      .map((p) => (metric === "dose" ? p.dose : p.cps));
+    const min = Math.min(...vals);
+    const max = Math.max(...vals);
+
     trackDotLayer.addTo(map);
-    Object.values(tracks).forEach((t) => {
-      if (!t.visible) return;
-      if (!t.markerGroup) {
-        const color = trackColorForHue(t.hue);
-        const g = L.layerGroup();
-        t.points.forEach((p) => {
-          const m = L.circleMarker([p.lat, p.lon], {
-            radius: 3,
-            color,
-            fillColor: color,
-            weight: 1,
-            opacity: dotOpacity,
-            fillOpacity: dotOpacity,
-            className: "track-marker",
-          });
-          g.addLayer(m);
+    visibleTracks.forEach((t) => {
+      if (!t.markerGroup) t.markerGroup = L.layerGroup();
+      else t.markerGroup.clearLayers();
+
+      filterByDate(t.points).forEach((p) => {
+        const valMetric = metric === "dose" ? p.dose : p.cps;
+        const color =
+          p.dose === 0 && p.cps === 0
+            ? "#777"
+            : colorScale(valMetric, min, max);
+        const m = L.circleMarker([p.lat, p.lon], {
+          radius: 3,
+          color,
+          fillColor: color,
+          weight: 1,
+          opacity: dotOpacity,
+          fillOpacity: dotOpacity,
+          className: "track-marker",
         });
-        t.markerGroup = g;
-      }
-      t.markerGroup.eachLayer((m) =>
-        m.setStyle({ opacity: dotOpacity, fillOpacity: dotOpacity })
-      );
+        t.markerGroup.addLayer(m);
+      });
       trackDotLayer.addLayer(t.markerGroup);
     });
   };
@@ -741,7 +746,10 @@ window.addEventListener("load", () => {
 
   document
     .getElementById("metricSelect")
-    .addEventListener("change", drawDots);
+    .addEventListener("change", () => {
+      drawDots();
+      renderTrackDots();
+    });
   trackListElem.addEventListener("change", (e) => {
     if (!e.target.dataset.file) return;
     const t = tracks[e.target.dataset.file];
