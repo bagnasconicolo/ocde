@@ -95,6 +95,24 @@
         stroke: rgba(255, 255, 255, 0.3);
         stroke-width: 1px;
       }
+      .site-glow {
+        stroke: none;
+        fill: #3b82f6;
+        fill-opacity: 0.2;
+        filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.7));
+        animation: siteGlowPulse 2.5s ease-in-out infinite;
+      }
+      @keyframes siteGlowPulse {
+        0%,
+        100% {
+          transform: scale(0.95);
+          opacity: 0.6;
+        }
+        50% {
+          transform: scale(1.05);
+          opacity: 0.2;
+        }
+      }
     </style>
   </head>
   <body class="bg-gray-900 text-gray-200 pt-14">
@@ -787,9 +805,11 @@
           Object.entries(siteMarkers).forEach(([id, m]) => {
             const c = L.circle(m.getLatLng(), {
               radius: siteRadius,
-              color: "#2563eb",
-              weight: 1,
-              fillOpacity: 0.05,
+              stroke: false,
+              fillColor: "#3b82f6",
+              fillOpacity: 0.2,
+              className: "site-glow",
+              renderer: L.svg(),
             }).addTo(map);
             siteCircles[id] = c;
           });
