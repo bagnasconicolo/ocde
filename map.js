@@ -14,6 +14,7 @@ window.addEventListener("load", () => {
     attributionControl: false,
     zoomControl: false,
     renderer: L.canvas(),
+    boxZoom: false,
   }).setView([20, 0], 2);
 
   const baseLayers = {
