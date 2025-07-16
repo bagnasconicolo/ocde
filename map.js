@@ -532,7 +532,7 @@ window.addEventListener("load", () => {
             const plotCpsDiv = document.getElementById(plotCpsId);
             const plotDoseDiv = document.getElementById(plotDoseId);
             if (!plotCpsDiv || !plotDoseDiv) return;
-            const x = [...Array(filtered.length).keys()];
+            const x = filtered.map((p) => new Date(p.date * 1000));
             const dosesArr = filtered.map((p) => p.dose);
             const cpsArr = filtered.map((p) => p.cps);
 
@@ -571,7 +571,8 @@ window.addEventListener("load", () => {
                   plot_bgcolor: "#1f2937",
                   font: { color: "#ffffff", size: 10 },
                   xaxis: {
-                    title: "fix #",
+                    title: "time",
+                    type: "date",
                     showgrid: false,
                     rangeslider: { visible: true },
                   },
@@ -605,7 +606,8 @@ window.addEventListener("load", () => {
                   plot_bgcolor: "#1f2937",
                   font: { color: "#ffffff", size: 10 },
                   xaxis: {
-                    title: "fix #",
+                    title: "time",
+                    type: "date",
                     showgrid: false,
                     rangeslider: { visible: true },
                   },
