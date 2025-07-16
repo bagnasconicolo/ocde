@@ -1074,6 +1074,12 @@
               console.warn("skip", fname, e.message);
               const p = document.createElement("p");
               p.textContent = `Failed to load ${fname}: ${e.message}`;
+              if (e instanceof TypeError) {
+                const help = document.createElement("span");
+                help.textContent =
+                  " – run 'python -m http.server' to serve files locally";
+                p.appendChild(help);
+              }
               errorMessage.appendChild(p);
               errorMessage.classList.remove("hidden");
             }
@@ -1091,18 +1097,29 @@
         /* ------------------ DOT RENDER ------------------ */
         function drawDots() {
           const legend = document.getElementById("legend");
+          const legendLabel = document.getElementById("legend-label");
+          const legendBar = document.getElementById("legend-bar");
+          const legendMin = document.getElementById("legend-min");
+          const legendMax = document.getElementById("legend-max");
+
           if (trackView) {
             pointLayer.clearLayers();
             legend.classList.add("hidden");
             return;
           }
+
           const metric = document.getElementById("metricSelect").value;
           const visiblePoints = filterByDate(allPoints).filter(
             (p) => tracks[p.fname]?.visible
           );
           if (!visiblePoints.length) {
             pointLayer.clearLayers();
-            legend.classList.add("hidden");
+            legendLabel.textContent =
+              metric === "dose" ? "Dose (µSv/h)" : "Counts (cps)";
+            legendMin.textContent = "0";
+            legendMax.textContent = "0";
+            legendBar.style.background = "linear-gradient(to right, #777, #777)";
+            legend.classList.remove("hidden");
             return;
           }
           const points = aggregatePoints(visiblePoints);
@@ -1112,10 +1129,6 @@
           const min = Math.min(...vals);
           const max = Math.max(...vals);
 
-          const legendLabel = document.getElementById("legend-label");
-          const legendBar = document.getElementById("legend-bar");
-          const legendMin = document.getElementById("legend-min");
-          const legendMax = document.getElementById("legend-max");
           const decimals = metric === "dose" ? 3 : 1;
           legendLabel.textContent =
             metric === "dose" ? "Dose (µSv/h)" : "Counts (cps)";
