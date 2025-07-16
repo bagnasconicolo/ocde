@@ -107,14 +107,14 @@
         }
 
       @keyframes siteGlow {
-        0%, 100% { fill-opacity: 0.15; }
+        0%, 100% { fill-opacity: 0.25; }
         50% { fill-opacity: 0.4; }
       }
       .site-glow {
         stroke: none;
         fill: #2563eb;
         filter: blur(4px);
-        fill-opacity: 0.15;
+        fill-opacity: 0.25;
       }
       .site-glow-anim {
         animation: siteGlow 1.5s ease-in-out;
@@ -826,7 +826,7 @@
               radius: siteRadius,
               stroke: false,
               fillColor: "#2563eb",
-              fillOpacity: 0.15,
+              fillOpacity: 0.25,
               className: "site-glow",
               renderer: L.svg(),
             }).addTo(map);
