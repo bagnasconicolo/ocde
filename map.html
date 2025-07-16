@@ -207,8 +207,9 @@
                 class="w-full accent-blue-500"
               />
             </div>
-            <label class="flex items-center gap-2 text-gray-200">
-              <input type="checkbox" id="showTrackDotsToggle" class="accent-blue-500" />
+            <label class="flex items-center gap-2 text-gray-200 cursor-pointer" for="showTrackDotsToggle">
+              <input type="checkbox" id="showTrackDotsToggle" class="sr-only peer" />
+              <div class="w-11 h-6 bg-gray-600 rounded-full peer-checked:bg-blue-600 relative after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"></div>
               <span>Show markers</span>
             </label>
             <div>
@@ -539,40 +540,45 @@
             const color = trackColorForHue(t.hue);
             t.line.setStyle({ color });
             if (t.swatch) t.swatch.style.background = color;
-            if (t.markerGroup) {
-              t.markerGroup.eachLayer((m) =>
-                m.setStyle({ color, fillColor: color })
-              );
-            }
           });
         };
 
         const renderTrackDots = () => {
           trackDotLayer.clearLayers();
           if (!(trackView && showTrackDots)) return;
+
+          const metric = document.getElementById("metricSelect").value;
+          const visibleTracks = Object.values(tracks).filter((t) => t.visible);
+          const visiblePoints = visibleTracks.flatMap((t) => filterByDate(t.points));
+          if (!visiblePoints.length) return;
+          const vals = visiblePoints
+            .filter((p) => p.dose !== 0 || p.cps !== 0)
+            .map((p) => (metric === "dose" ? p.dose : p.cps));
+          const min = Math.min(...vals);
+          const max = Math.max(...vals);
+
           trackDotLayer.addTo(map);
-          Object.values(tracks).forEach((t) => {
-            if (!t.visible) return;
-            if (!t.markerGroup) {
-              const color = trackColorForHue(t.hue);
-              const g = L.layerGroup();
-              t.points.forEach((p) => {
-                const m = L.circleMarker([p.lat, p.lon], {
-                  radius: 3,
-                  color,
-                  fillColor: color,
-                  weight: 1,
-                  opacity: dotOpacity,
-                  fillOpacity: dotOpacity,
-                  className: "track-marker",
-                });
-                g.addLayer(m);
+          visibleTracks.forEach((t) => {
+            if (!t.markerGroup) t.markerGroup = L.layerGroup();
+            else t.markerGroup.clearLayers();
+
+            filterByDate(t.points).forEach((p) => {
+              const valMetric = metric === "dose" ? p.dose : p.cps;
+              const color =
+                p.dose === 0 && p.cps === 0
+                  ? "#777"
+                  : colorScale(valMetric, min, max);
+              const m = L.circleMarker([p.lat, p.lon], {
+                radius: 3,
+                color,
+                fillColor: color,
+                weight: 1,
+                opacity: dotOpacity,
+                fillOpacity: dotOpacity,
+                className: "track-marker",
               });
-              t.markerGroup = g;
-            }
-            t.markerGroup.eachLayer((m) =>
-              m.setStyle({ opacity: dotOpacity, fillOpacity: dotOpacity })
-            );
+              t.markerGroup.addLayer(m);
+            });
             trackDotLayer.addLayer(t.markerGroup);
           });
         };
@@ -1006,7 +1012,10 @@
 
         document
           .getElementById("metricSelect")
-          .addEventListener("change", drawDots);
+          .addEventListener("change", () => {
+            drawDots();
+            renderTrackDots();
+          });
         trackListElem.addEventListener("change", (e) => {
           if (!e.target.dataset.file) return;
           const t = tracks[e.target.dataset.file];
