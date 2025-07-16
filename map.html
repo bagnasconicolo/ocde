@@ -67,6 +67,11 @@
       .data-dot {
         filter: drop-shadow(0 0 2px #000);
       }
+      .site-icon {
+        font-size: 24px;
+        line-height: 24px;
+        text-align: center;
+      }
     </style>
   </head>
   <body class="bg-gray-900 text-gray-200 pt-14">
@@ -115,6 +120,24 @@
             <span class="ml-auto transition-transform group-open:rotate-180">▾</span>
           </summary>
           <ul id="trackList" class="mt-2 space-y-2 text-sm"></ul>
+        </details>
+
+        <details class="group bg-gray-700/50 rounded-lg p-2">
+          <summary class="cursor-pointer font-medium flex items-center hover:bg-gray-600/40 rounded transition-colors">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              class="w-4 h-4 mr-1"
+            >
+              <path d="M12 2C8.13 2 5 5.13 5 9c0 4.26 4.52 9.74 6.11 11.71.38.46 1.4.46 1.78 0C14.48 18.74 19 13.26 19 9c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            Sites
+            <span class="ml-auto transition-transform group-open:rotate-180">▾</span>
+          </summary>
+          <ul id="siteList" class="mt-2 space-y-2 text-sm"></ul>
         </details>
 
         <details class="group bg-gray-700/50 rounded-lg p-2">
@@ -381,6 +404,14 @@
         const trackDotLayer = L.layerGroup();
         const siteLayer = L.layerGroup().addTo(map);
         const trackListElem = document.getElementById("trackList");
+        const siteListElem = document.getElementById("siteList");
+        const siteIcon = L.divIcon({
+          html: "🏠",
+          className: "site-icon",
+          iconSize: [24, 24],
+          iconAnchor: [12, 12],
+        });
+        const siteMarkers = {};
         const sidebar = document.getElementById("sidebar");
         const trackViewToggle = document.getElementById("trackViewToggle");
         const startTimeInput = document.getElementById("startTime");
@@ -659,15 +690,33 @@
           const sites = await fetchSites();
           sites.forEach((s) => {
             if (isNaN(s.lat) || isNaN(s.lon)) return;
-            const m = L.marker([s.lat, s.lon]).addTo(siteLayer);
+            const id = s.id || `${s.lat},${s.lon}`;
+            const m = L.marker([s.lat, s.lon], { icon: siteIcon }).addTo(siteLayer);
+            siteMarkers[id] = m;
             let html = `<h3 class='font-semibold mb-1'>${s.title ?? ""}</h3>`;
             if (s.description) html += `<p>${s.description}</p>`;
             if (Array.isArray(s.images) && s.images[0]) {
               html += `<img src='${s.images[0]}' class='mt-2 rounded w-32 h-auto'/>`;
             }
             m.bindPopup(html);
+
+
+            const li = document.createElement("li");
+            const checkbox = document.createElement("input");
+            checkbox.type = "checkbox";
+            checkbox.className = "siteCheck accent-blue-500";
+            checkbox.dataset.id = id;
+            checkbox.checked = true;
+            const labelElem = document.createElement("label");
+            labelElem.className = "flex items-center gap-2 text-gray-200";
+            labelElem.appendChild(checkbox);
+            labelElem.appendChild(document.createTextNode(" " + (s.title || id)));
+            li.appendChild(labelElem);
+            siteListElem.appendChild(li);
+
             m.on("mouseover", () => m.openPopup());
             m.on("mouseout", () => m.closePopup());
+
           });
         };
 
@@ -1109,6 +1158,14 @@
             }
           }
           drawDots();
+        });
+
+        siteListElem.addEventListener("change", (e) => {
+          if (!e.target.dataset.id) return;
+          const m = siteMarkers[e.target.dataset.id];
+          if (!m) return;
+          if (e.target.checked) siteLayer.addLayer(m);
+          else siteLayer.removeLayer(m);
         });
 
         startTimeInput.addEventListener("change", () => {
