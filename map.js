@@ -562,7 +562,7 @@ window.addEventListener("load", () => {
                     mode: "lines",
                     line: {
                       width: 2,
-                      color,
+                      color: "#f59e0b",
                     },
                   },
                 ],
@@ -597,7 +597,7 @@ window.addEventListener("load", () => {
                     mode: "lines",
                     line: {
                       width: 2,
-                      color,
+                      color: "#38bdf8",
                     },
                   },
                 ],
