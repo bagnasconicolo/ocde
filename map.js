@@ -85,6 +85,8 @@ window.addEventListener("load", () => {
   const pointLayer = L.layerGroup().addTo(map);
   const lineLayer = L.layerGroup().addTo(map);
   const trackDotLayer = L.layerGroup();
+  const siteLayer = L.layerGroup().addTo(map);
+  const sites = [];
   const trackListElem = document.getElementById("trackList");
   const sidebar = document.getElementById("sidebar");
   const trackViewToggle = document.getElementById("trackViewToggle");
@@ -180,6 +182,30 @@ window.addEventListener("load", () => {
       g = Math.round(255 * (1 - (t - 0.5) * 2)); // yellow -> red
     }
     return `rgb(${r},${g},0)`;
+  };
+
+  const loadSites = async () => {
+    try {
+      const res = await fetch("data/sites.json");
+      if (!res.ok) return;
+      const data = await res.json();
+      data.forEach((s) => {
+        const m = L.marker([s.lat, s.lon]).addTo(siteLayer);
+        let html = `<div class='prose prose-sm prose-invert'>`;
+        html += `<h3 class='font-semibold mb-2'>${s.name}</h3>`;
+        if (Array.isArray(s.images)) {
+          html += s.images
+            .map((u) => `<img src='${u}' class='mb-2 rounded-lg'>`)
+            .join("");
+        }
+        if (s.description) html += `<p>${s.description}</p>`;
+        html += `</div>`;
+        m.bindPopup(html);
+        sites.push({ ...s, marker: m });
+      });
+    } catch (e) {
+      console.warn("sites data missing");
+    }
   };
 
   const animateCounter = (el, value, decimals = 0) => {
@@ -646,6 +672,8 @@ window.addEventListener("load", () => {
       }
     }
 
+    await loadSites();
+    sites.forEach((s) => bounds.push([s.lat, s.lon]));
     if (bounds.length) map.fitBounds(bounds, { padding: [50, 50] });
     if (globalMinDate !== Infinity) {
       startTimeInput.valueAsNumber = globalMinDate * 1000;

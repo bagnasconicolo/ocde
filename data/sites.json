@@ -1,0 +1,9 @@
+[
+  {
+    "name": "Sample Site",
+    "lat": 44.3209,
+    "lon": 7.6094,
+    "description": "Example location",
+    "images": ["https://placehold.co/300x200"]
+  }
+]

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Site Tool</title>
+    <script src="https://cdn.tailwindcss.com?plugins=typography" defer></script>
+  </head>
+  <body class="bg-gray-900 text-gray-200 pt-14">
+    <div id="nav-placeholder"></div>
+    <main class="max-w-3xl mx-auto p-4 space-y-6">
+      <h1 class="text-2xl font-semibold">Site Manager</h1>
+      <form id="siteForm" class="space-y-2">
+        <input required id="name" placeholder="Name" class="w-full p-2 rounded bg-gray-800" />
+        <div class="flex gap-2">
+          <input required id="lat" type="number" step="any" placeholder="Lat" class="flex-1 p-2 rounded bg-gray-800" />
+          <input required id="lon" type="number" step="any" placeholder="Lon" class="flex-1 p-2 rounded bg-gray-800" />
+        </div>
+        <textarea id="description" placeholder="Description" class="w-full p-2 rounded bg-gray-800"></textarea>
+        <input id="image" placeholder="Image URL" class="w-full p-2 rounded bg-gray-800" />
+        <button type="submit" class="bg-blue-600 px-4 py-2 rounded">Add</button>
+      </form>
+      <div>
+        <h2 class="text-xl font-semibold mt-4">Current Sites</h2>
+        <ul id="siteList" class="space-y-1 mt-2 text-sm"></ul>
+      </div>
+      <div>
+        <h2 class="text-xl font-semibold mt-4">JSON Output</h2>
+        <textarea id="output" class="w-full h-40 bg-gray-800 p-2 rounded" readonly></textarea>
+      </div>
+    </main>
+    <script>
+      fetch('nav.html').then(r => r.text()).then(html => {
+        document.getElementById('nav-placeholder').outerHTML = html;
+      });
+      const sites = [];
+      const list = document.getElementById('siteList');
+      const output = document.getElementById('output');
+      function renderOutput(){
+        output.value = JSON.stringify(sites, null, 2);
+      }
+      function addSite(site){
+        sites.push(site);
+        const li = document.createElement('li');
+        li.textContent = `${site.name} (${site.lat.toFixed(5)}, ${site.lon.toFixed(5)})`;
+        list.appendChild(li);
+      }
+      fetch('data/sites.json').then(r => r.json()).then(data => {
+        data.forEach(addSite);
+        renderOutput();
+      }).catch(()=>{});
+      document.getElementById('siteForm').addEventListener('submit', e => {
+        e.preventDefault();
+        const site = {
+          name: document.getElementById('name').value.trim(),
+          lat: parseFloat(document.getElementById('lat').value),
+          lon: parseFloat(document.getElementById('lon').value),
+          description: document.getElementById('description').value.trim(),
+          images: document.getElementById('image').value.trim() ? [document.getElementById('image').value.trim()] : []
+        };
+        addSite(site);
+        e.target.reset();
+        renderOutput();
+      });
+    </script>
+  </body>
+</html>
