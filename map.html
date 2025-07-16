@@ -905,6 +905,8 @@
             return await res.json();
           } catch {
             console.warn("sites.json missing");
+            errorMessage.textContent = "Could not fetch sites.json.";
+            errorMessage.classList.remove("hidden");
             return [];
           }
         };
