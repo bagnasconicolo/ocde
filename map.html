@@ -379,6 +379,7 @@
         const pointLayer = L.layerGroup().addTo(map);
         const lineLayer = L.layerGroup().addTo(map);
         const trackDotLayer = L.layerGroup();
+        const siteLayer = L.layerGroup().addTo(map);
         const trackListElem = document.getElementById("trackList");
         const sidebar = document.getElementById("sidebar");
         const trackViewToggle = document.getElementById("trackViewToggle");
@@ -641,6 +642,31 @@
             }
           });
           styleElem.textContent = `.track-line, .data-dot { filter: drop-shadow(0 0 ${lineShadow}px #000); }`;
+        };
+
+        const fetchSites = async () => {
+          try {
+            const res = await fetch("data/sites.json");
+            if (!res.ok) throw new Error();
+            return await res.json();
+          } catch {
+            console.warn("sites.json missing");
+            return [];
+          }
+        };
+
+        const loadSites = async () => {
+          const sites = await fetchSites();
+          sites.forEach((s) => {
+            if (isNaN(s.lat) || isNaN(s.lon)) return;
+            const m = L.marker([s.lat, s.lon]).addTo(siteLayer);
+            let html = `<h3 class='font-semibold mb-1'>${s.title ?? ""}</h3>`;
+            if (s.description) html += `<p>${s.description}</p>`;
+            if (Array.isArray(s.images) && s.images[0]) {
+              html += `<img src='${s.images[0]}' class='mt-2 rounded w-32 h-auto'/>`;
+            }
+            m.bindPopup(html);
+          });
         };
 
         /* ------------------ MAIN LOAD ------------------ */
@@ -964,6 +990,7 @@
             endTimeInput.valueAsNumber = globalMaxDate * 1000;
           }
           drawDots();
+          loadSites();
         })();
 
         /* ------------------ DOT RENDER ------------------ */
