@@ -386,7 +386,7 @@
       <!-- Full screen track popup -->
       <div
         id="trackPopup"
-        class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden z-[1201] flex items-center justify-center p-4"
+        class="fixed inset-0 bg-black/80 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity z-[1201] flex items-center justify-center p-4"
       >
         <div
           id="trackPopupContent"
@@ -520,9 +520,10 @@
         const trackPopupContent = document.getElementById("trackPopupContent");
         document
           .getElementById("trackPopupClose")
-          .addEventListener("click", () =>
-            trackPopup.classList.add("hidden")
-          );
+          .addEventListener("click", () => {
+            trackPopup.classList.add("opacity-0", "pointer-events-none");
+            trackPopup.classList.remove("opacity-100");
+          });
         let trackView = false;
         let globalMinDate = Infinity;
         let globalMaxDate = -Infinity;
@@ -1034,12 +1035,14 @@
                       <div id='${histDoseId}' class='w-full h-96'></div>
                     </div>
                   </div>`;
-                trackPopup.classList.remove("hidden");
+                trackPopup.classList.remove("pointer-events-none", "opacity-0");
+                trackPopup.classList.add("opacity-100");
                 document
                   .getElementById("trackPopupClose")
-                  .addEventListener("click", () =>
-                    trackPopup.classList.add("hidden")
-                  );
+                  .addEventListener("click", () => {
+                    trackPopup.classList.add("opacity-0", "pointer-events-none");
+                    trackPopup.classList.remove("opacity-100");
+                  });
 
                 animateCounter(
                   document.getElementById(`stat-min-dose-${uid}`),
