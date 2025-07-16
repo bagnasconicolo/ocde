@@ -29,17 +29,23 @@
       }
       /* Bigger, dark pop-ups with high-contrast text */
       .leaflet-popup-content-wrapper {
-        background: #1f2937;
+        background: rgba(31, 41, 55, 0.4);
         color: #ffffff;
         border-radius: 0.75rem;
         box-shadow: 0 8px 16px rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(10px) saturate(150%);
+        -webkit-backdrop-filter: blur(10px) saturate(150%);
+        border: 1px solid rgba(255, 255, 255, 0.1);
       }
       /* Ensure Leaflet popups appear above the menu bar */
       .leaflet-popup-pane {
         z-index: 1200;
       }
       .leaflet-popup-tip {
-        background: #1f2937;
+        background: rgba(31, 41, 55, 0.4);
+        backdrop-filter: blur(10px) saturate(150%);
+        -webkit-backdrop-filter: blur(10px) saturate(150%);
+        border: 1px solid rgba(255, 255, 255, 0.1);
       }
       .leaflet-popup-content {
         width: 500px; /* bigger popup */
@@ -362,7 +368,7 @@
       >
         <div
           id="trackPopupContent"
-          class="relative bg-gradient-to-br from-gray-800 to-gray-700 text-white p-6 overflow-auto max-w-6xl max-h-full w-full rounded-xl shadow-2xl ring-1 ring-gray-500/50"
+          class="relative glass-panel text-white p-6 overflow-auto max-w-6xl max-h-full w-full rounded-xl shadow-2xl ring-1 ring-gray-500/50"
         >
           <button
             id="trackPopupClose"
