@@ -55,6 +55,8 @@ window.addEventListener("load", () => {
   L.control.zoom({ position: "bottomleft" }).addTo(map);
   L.control.scale({ position: "bottomleft" }).addTo(map);
   L.control.attribution({ position: "bottomright" }).addTo(map);
+  map.on("zoomend", drawDots);
+  map.on("resize", drawDots);
 
   const coordsControl = L.control({ position: "bottomright" });
   coordsControl.onAdd = function () {
@@ -212,6 +214,42 @@ window.addEventListener("load", () => {
       minCps: Math.min(...cpses),
     maxCps: Math.max(...cpses),
     };
+  };
+
+  const aggregatePoints = (pts) => {
+    const zoom = map.getZoom();
+    const cellSize = zoom >= 12 ? 10 : zoom >= 10 ? 20 : zoom >= 8 ? 40 : zoom >= 6 ? 80 : 120;
+    const cells = new Map();
+    pts.forEach((p) => {
+      const { x, y } = map.latLngToLayerPoint([p.lat, p.lon]);
+      const key = `${Math.floor(x / cellSize)}_${Math.floor(y / cellSize)}`;
+      let c = cells.get(key);
+      if (!c)
+        cells.set(
+          key,
+          (c = { lat: 0, lon: 0, dose: 0, cps: 0, energy: 0, eCount: 0, count: 0 })
+        );
+      c.lat += p.lat;
+      c.lon += p.lon;
+      c.dose += p.dose;
+      c.cps += p.cps;
+      if (Number.isFinite(p.energy) && p.energy > 0) {
+        c.energy += p.energy;
+        c.eCount++;
+      }
+      c.count++;
+    });
+    const out = [];
+    cells.forEach((c) => {
+      out.push({
+        lat: c.lat / c.count,
+        lon: c.lon / c.count,
+        dose: c.dose / c.count,
+        cps: c.cps / c.count,
+        energy: c.eCount ? c.energy / c.eCount : NaN,
+      });
+    });
+    return out;
   };
 
   const updateTrackColors = () => {
@@ -560,10 +598,11 @@ window.addEventListener("load", () => {
       legend.classList.add("hidden");
       return;
     }
-    const filteredVals = visiblePoints.filter(
+    const points = aggregatePoints(visiblePoints);
+    const filteredVals = points.filter(
       (p) => p.dose !== 0 || p.cps !== 0
     );
-    const sample = filteredVals.length ? filteredVals : visiblePoints;
+    const sample = filteredVals.length ? filteredVals : points;
     const vals = sample.map((p) => (metric === "dose" ? p.dose : p.cps));
     const min = Math.min(...vals);
     const max = Math.max(...vals);
@@ -584,11 +623,12 @@ window.addEventListener("load", () => {
     legend.classList.remove("hidden");
 
     pointLayer.clearLayers();
-    visiblePoints.forEach((p) => {
+    const radius = 4 + map.getZoom() / 2;
+    points.forEach((p) => {
       const valMetric = metric === "dose" ? p.dose : p.cps;
       const color = p.dose === 0 && p.cps === 0 ? "#777" : colorScale(valMetric, min, max);
       const marker = L.circleMarker([p.lat, p.lon], {
-        radius: 6,
+        radius,
         renderer: map.getRenderer(map),
         fillColor: color,
         color: color,
