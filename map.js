@@ -414,7 +414,7 @@ window.addEventListener("load", () => {
         const histDoseId = `hist-dose-${uid}`;
         const sliderDoseId = `slider-dose-${uid}`;
 
-        line.on("click", () => {
+        line.on("mouseover", () => {
           let filtered = filterByDate(pts);
           if (!filtered.length) filtered = pts;
           const stats = computeStats(filtered);
@@ -652,6 +652,7 @@ window.addEventListener("load", () => {
             document.getElementById(sliderDoseId).addEventListener("input", (e) => drawDose(parseInt(e.target.value)));
           }, 120);
         });
+        line.on("mouseout", () => trackPopup.classList.add("hidden"));
       } catch (e) {
         console.warn("skip", fname, e.message);
       }
@@ -752,6 +753,8 @@ window.addEventListener("load", () => {
       popupHtml += `<div class='mt-2 text-xs text-gray-400 text-center'>${dateStr}</div>`;
       popupHtml += `</div>`;
       marker.bindPopup(popupHtml);
+      marker.on("mouseover", () => marker.openPopup());
+      marker.on("mouseout", () => marker.closePopup());
     });
   }
 

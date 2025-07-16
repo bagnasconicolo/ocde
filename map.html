@@ -666,6 +666,8 @@
               html += `<img src='${s.images[0]}' class='mt-2 rounded w-32 h-auto'/>`;
             }
             m.bindPopup(html);
+            m.on("mouseover", () => m.openPopup());
+            m.on("mouseout", () => m.closePopup());
           });
         };
 
@@ -734,7 +736,7 @@
               const histDoseId = `hist-dose-${uid}`;
               const sliderDoseId = `slider-dose-${uid}`;
 
-              line.on("click", () => {
+              line.on("mouseover", () => {
                 let filtered = filterByDate(pts);
                 if (!filtered.length) filtered = pts;
                 const stats = computeStats(filtered);
@@ -972,9 +974,10 @@
                   drawCps(1);
                   drawDose(1);
                   document.getElementById(sliderCpsId).addEventListener("input", (e) => drawCps(parseInt(e.target.value)));
-                  document.getElementById(sliderDoseId).addEventListener("input", (e) => drawDose(parseInt(e.target.value)));
+                  document.getElementById(sliderDoseId).addEventListener("input", (e) => drawDose(parseInt(e.target.value))); 
                 }, 120);
               });
+              line.on("mouseout", () => trackPopup.classList.add("hidden"));
             } catch (e) {
               console.warn("skip", fname, e.message);
               const p = document.createElement("p");
@@ -1078,6 +1081,8 @@
               popupHtml += `<div class='mt-2 text-xs text-gray-400 text-center'>${dateStr}</div>`;
               popupHtml += `</div>`;
             marker.bindPopup(popupHtml);
+            marker.on("mouseover", () => marker.openPopup());
+            marker.on("mouseout", () => marker.closePopup());
           });
         }
 
