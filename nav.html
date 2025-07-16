@@ -1,3 +1,11 @@
+<style>
+  .glass-dark {
+    background: rgba(31, 41, 55, 0.4);
+    backdrop-filter: blur(10px) saturate(150%);
+    -webkit-backdrop-filter: blur(10px) saturate(150%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+</style>
 <nav
   class="bg-gradient-to-r from-gray-800 to-gray-900 text-white shadow-lg fixed top-0 left-0 right-0 z-[1100]"
 >
@@ -11,30 +19,30 @@
       Natural Radiation Survey in Southern Piedmont
     </a>
     <div class="hidden sm:flex space-x-2 text-sm font-medium">
-      <a
-        href="map.html"
-        class="px-3 py-1 rounded bg-gray-700 hover:bg-gray-600 transition-colors"
-        >Map</a
-      >
-      <a
-        href="about.html"
-        class="px-3 py-1 rounded bg-gray-700 hover:bg-gray-600 transition-colors"
-        >About Us</a
-      >
+        <a
+          href="map.html"
+          class="px-3 py-1 rounded glass-dark hover:bg-gray-700/50 transition-colors"
+          >Map</a
+        >
+        <a
+          href="about.html"
+          class="px-3 py-1 rounded glass-dark hover:bg-gray-700/50 transition-colors"
+          >About Us</a
+        >
     </div>
     <details class="sm:hidden relative">
       <summary
-        class="list-none px-3 py-1 rounded bg-gray-700 hover:bg-gray-600 cursor-pointer"
+        class="list-none px-3 py-1 rounded glass-dark hover:bg-gray-700/50 cursor-pointer"
       >
         ☰
       </summary>
       <div
-        class="absolute right-0 mt-2 w-40 bg-gray-800 rounded shadow-lg flex flex-col space-y-1 py-2"
+        class="absolute right-0 mt-2 w-40 glass-dark rounded shadow-lg flex flex-col space-y-1 py-2"
       >
-        <a href="map.html" class="px-3 py-1 hover:bg-gray-700 rounded"
+        <a href="map.html" class="px-3 py-1 rounded glass-dark hover:bg-gray-700/50"
           >Map</a
         >
-        <a href="about.html" class="px-3 py-1 hover:bg-gray-700 rounded"
+        <a href="about.html" class="px-3 py-1 rounded glass-dark hover:bg-gray-700/50"
           >About Us</a
         >
       </div>
