@@ -455,29 +455,29 @@ window.addEventListener("load", () => {
                 <div class='text-gray-400'>µSv/h</div>
               </div>
               <div class='glass-panel p-2 rounded-lg'>
-                <div class='text-gray-400'>CPS min</div>
+                <div class='text-gray-400'>Rate min</div>
                 <div id='stat-min-cps-${uid}' class='text-lg font-semibold text-amber-400'>0</div>
                 <div class='text-gray-400'>cps</div>
               </div>
               <div class='glass-panel p-2 rounded-lg'>
-                <div class='text-gray-400'>CPS avg</div>
+                <div class='text-gray-400'>Rate avg</div>
                 <div id='stat-avg-cps-${uid}' class='text-lg font-semibold text-amber-400'>0</div>
                 <div class='text-gray-400'>cps</div>
               </div>
               <div class='glass-panel p-2 rounded-lg'>
-                <div class='text-gray-400'>CPS max</div>
+                <div class='text-gray-400'>Rate max</div>
                 <div id='stat-max-cps-${uid}' class='text-lg font-semibold text-amber-400'>0</div>
                 <div class='text-gray-400'>cps</div>
               </div>
             </div>
             <div class='grid md:grid-cols-2 md:grid-rows-2 gap-4 text-white'>
               <div class='glass-panel p-4 rounded-lg'>
-                <label class='block text-xs mb-1'>CPS Avg window: <span id='valCps-${uid}'>1</span></label>
+                <label class='block text-xs mb-1'>Rate Avg window: <span id='valCps-${uid}'>1</span></label>
                 <input type='range' min='1' max='50' value='1' id='${sliderCpsId}' class='w-full mb-2 accent-teal-500'>
                 <div id='${plotCpsId}' class='w-full h-96'></div>
               </div>
               <div class='glass-panel p-4 rounded-lg'>
-                <h4 class='text-sm font-semibold mb-2'>CPS histogram</h4>
+                <h4 class='text-sm font-semibold mb-2'>Rate histogram</h4>
                 <div id='${histCpsId}' class='w-full h-96'></div>
               </div>
               <div class='glass-panel p-4 rounded-lg'>
@@ -556,7 +556,7 @@ window.addEventListener("load", () => {
                   {
                     x,
                     y: vals,
-                    name: "CPS",
+                    name: "Rate (cps)",
                     type: "scattergl",
                     mode: "lines",
                     line: {
@@ -714,7 +714,7 @@ window.addEventListener("load", () => {
     const legendMax = document.getElementById("legend-max");
     const decimals = metric === "dose" ? 3 : 1;
     legendLabel.textContent =
-      metric === "dose" ? "Dose (µSv/h)" : "Counts (cps)";
+      metric === "dose" ? "Dose (µSv/h)" : "Rate (cps)";
     legendMin.textContent = min.toFixed(decimals);
     legendMax.textContent = max.toFixed(decimals);
     const cMin = colorScale(min, min, max);
@@ -753,7 +753,7 @@ window.addEventListener("load", () => {
         `<div class='text-gray-400'>µSv/h</div>` +
         `</div>` +
         `<div class='glass-panel p-2 rounded-lg'>` +
-        `<div class='text-gray-400'>CPS</div>` +
+        `<div class='text-gray-400'>Rate</div>` +
         `<div class='text-lg font-semibold text-amber-400'>${p.cps.toFixed(1)}</div>` +
         `<div class='text-gray-400'>cps</div>` +
         `</div>`;
