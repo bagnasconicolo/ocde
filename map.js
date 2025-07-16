@@ -766,8 +766,9 @@ window.addEventListener("load", () => {
           `<div class='text-gray-400'>keV</div>` +
           `</div>`;
       }
-      popupHtml += `</div>`;
-      popupHtml += `<div class='mt-2 text-xs text-gray-400 text-center'>${dateStr}</div>`;
+      popupHtml +=
+        `<div class='glass-panel py-1 rounded-lg col-span-${cols} text-gray-400'>${dateStr}</div>` +
+        `</div>`;
       popupHtml += `</div>`;
       marker.bindPopup(popupHtml);
       marker.on("mouseover", () => marker.openPopup());
