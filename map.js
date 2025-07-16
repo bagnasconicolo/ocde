@@ -121,6 +121,17 @@ window.addEventListener("load", () => {
       sidebar.classList.toggle("-translate-x-full")
     );
 
+  sidebar.querySelectorAll("details").forEach((d) => {
+    let pinned = false;
+    d.addEventListener("toggle", (e) => {
+      if (e.isTrusted) pinned = d.open;
+    });
+    d.addEventListener("mouseenter", () => d.setAttribute("open", ""));
+    d.addEventListener("mouseleave", () => {
+      if (!pinned) d.removeAttribute("open");
+    });
+  });
+
   /* ------------------ HELPERS ------------------ */
   const fetchTrackList = async () => {
     try {
