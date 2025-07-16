@@ -97,11 +97,43 @@
         class="fixed top-14 md:top-0 left-0 h-full w-72 max-w-full bg-gray-800/90 backdrop-blur-md p-4 space-y-4 overflow-y-auto transform -translate-x-full transition-transform z-[1000] md:relative md:translate-x-0 md:w-72 md:bg-opacity-100 text-gray-200"
 
       >
-        <h2 class="text-lg font-semibold mb-2">Tracks</h2>
-        <ul id="trackList" class="space-y-2 text-sm"></ul>
+        <details class="group bg-gray-700/50 rounded-lg p-2">
+          <summary class="cursor-pointer font-medium flex items-center">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              class="w-4 h-4 mr-1"
+            >
+              <line x1="4" y1="6" x2="20" y2="6" stroke-linecap="round" stroke-linejoin="round" />
+              <line x1="4" y1="12" x2="20" y2="12" stroke-linecap="round" stroke-linejoin="round" />
+              <line x1="4" y1="18" x2="20" y2="18" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            Tracks
+            <span class="ml-auto transition-transform group-open:rotate-180">▾</span>
+          </summary>
+          <ul id="trackList" class="mt-2 space-y-2 text-sm"></ul>
+        </details>
 
         <details class="group bg-gray-700/50 rounded-lg p-2">
           <summary class="cursor-pointer font-medium flex items-center">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              class="w-4 h-4 mr-1"
+            >
+              <line x1="4" y1="6" x2="20" y2="6" stroke-linecap="round" />
+              <circle cx="8" cy="6" r="2" />
+              <line x1="4" y1="12" x2="20" y2="12" stroke-linecap="round" />
+              <circle cx="16" cy="12" r="2" />
+              <line x1="4" y1="18" x2="20" y2="18" stroke-linecap="round" />
+              <circle cx="12" cy="18" r="2" />
+            </svg>
             Map Controls
             <span class="ml-auto transition-transform group-open:rotate-180">▾</span>
           </summary>
@@ -157,6 +189,16 @@
 
         <details class="group bg-gray-700/50 rounded-lg p-2">
           <summary class="cursor-pointer font-medium flex items-center">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              class="w-4 h-4 mr-1"
+            >
+              <path d="M15 5l4 4L7 21H3v-4L15 5z" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
             Line Style
             <span class="ml-auto transition-transform group-open:rotate-180">▾</span>
           </summary>
