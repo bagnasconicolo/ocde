@@ -1,0 +1,10 @@
+[
+  {
+    "id": "site1",
+    "title": "Site Name",
+    "lat": 44.5,
+    "lon": 7.5,
+    "description": "Short text",
+    "images": ["img/site1.jpg"]
+  }
+]
