@@ -543,7 +543,16 @@
 
         const aggregatePoints = (pts) => {
           const zoom = map.getZoom();
-          const cellSize = zoom >= 12 ? 10 : zoom >= 10 ? 20 : zoom >= 8 ? 40 : zoom >= 6 ? 80 : 120;
+          const cellSize =
+            zoom >= 12
+              ? 10
+              : zoom >= 10
+              ? 20
+              : zoom >= 8
+              ? 40
+              : zoom >= 6
+              ? 80
+              : 120;
           const cells = new Map();
           pts.forEach((p) => {
             const { x, y } = map.latLngToLayerPoint([p.lat, p.lon]);
@@ -552,7 +561,17 @@
             if (!c)
               cells.set(
                 key,
-                (c = { lat: 0, lon: 0, dose: 0, cps: 0, energy: 0, eCount: 0, count: 0 })
+                (c = {
+                  lat: 0,
+                  lon: 0,
+                  dose: 0,
+                  cps: 0,
+                  energy: 0,
+                  eCount: 0,
+                  dateSum: 0,
+                  dateCount: 0,
+                  count: 0,
+                })
               );
             c.lat += p.lat;
             c.lon += p.lon;
@@ -561,6 +580,10 @@
             if (Number.isFinite(p.energy) && p.energy > 0) {
               c.energy += p.energy;
               c.eCount++;
+            }
+            if (p.date && !isNaN(p.date)) {
+              c.dateSum += p.date;
+              c.dateCount++;
             }
             c.count++;
           });
@@ -572,6 +595,7 @@
               dose: c.dose / c.count,
               cps: c.cps / c.count,
               energy: c.eCount ? c.energy / c.eCount : NaN,
+              date: c.dateCount ? c.dateSum / c.dateCount : NaN,
             });
           });
           return out;
