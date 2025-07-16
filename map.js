@@ -84,6 +84,7 @@ window.addEventListener("load", () => {
   };
   const pointLayer = L.layerGroup().addTo(map);
   const lineLayer = L.layerGroup().addTo(map);
+  const trackDotLayer = L.layerGroup();
   const trackListElem = document.getElementById("trackList");
   const sidebar = document.getElementById("sidebar");
   const trackViewToggle = document.getElementById("trackViewToggle");
@@ -93,7 +94,10 @@ window.addEventListener("load", () => {
   const lineStylePanel = document.getElementById("lineStylePanel");
   const lineStyleSelect = document.getElementById("lineStyleSelect");
   const lineWidthInput = document.getElementById("lineWidthInput");
-  const lineShadowToggle = document.getElementById("lineShadowToggle");
+  const lineOpacityInput = document.getElementById("lineOpacityInput");
+  const lineShadowSlider = document.getElementById("lineShadowSlider");
+  const showTrackDotsToggle = document.getElementById("showTrackDotsToggle");
+  const dotOpacitySlider = document.getElementById("dotOpacitySlider");
   const trackPopup = document.getElementById("trackPopup");
   const trackPopupContent = document.getElementById("trackPopupContent");
   document
@@ -106,8 +110,11 @@ window.addEventListener("load", () => {
   let globalMaxDate = -Infinity;
   let lineDash = null;
   let lineWidth = 3;
-  let lineShadow = true;
-
+  let lineOpacity = 0.7;
+  let lineShadow = 2;
+  let showTrackDots = false;
+  let dotOpacity = 0.5;
+  
   document
     .getElementById("toggleSidebar")
     .addEventListener("click", () =>
@@ -265,16 +272,58 @@ window.addEventListener("load", () => {
       const color = trackColorForHue(t.hue);
       t.line.setStyle({ color });
       if (t.swatch) t.swatch.style.background = color;
+      if (t.markerGroup) {
+        t.markerGroup.eachLayer((m) =>
+          m.setStyle({ color, fillColor: color })
+        );
+      }
+    });
+  };
+
+  const renderTrackDots = () => {
+    trackDotLayer.clearLayers();
+    if (!(trackView && showTrackDots)) return;
+    trackDotLayer.addTo(map);
+    Object.values(tracks).forEach((t) => {
+      if (!t.visible) return;
+      if (!t.markerGroup) {
+        const color = trackColorForHue(t.hue);
+        const g = L.layerGroup();
+        t.points.forEach((p) => {
+          const m = L.circleMarker([p.lat, p.lon], {
+            radius: 3,
+            color,
+            fillColor: color,
+            weight: 1,
+            opacity: dotOpacity,
+            fillOpacity: dotOpacity,
+            className: "track-marker",
+          });
+          g.addLayer(m);
+        });
+        t.markerGroup = g;
+      }
+      t.markerGroup.eachLayer((m) =>
+        m.setStyle({ opacity: dotOpacity, fillOpacity: dotOpacity })
+      );
+      trackDotLayer.addLayer(t.markerGroup);
     });
   };
 
   const updateLineStyles = () => {
     Object.values(tracks).forEach((t) => {
-      t.line.setStyle({ weight: lineWidth, dashArray: lineDash });
+      t.line.setStyle({
+        weight: lineWidth,
+        dashArray: lineDash,
+        opacity: lineOpacity,
+      });
+      if (t.markerGroup) {
+        t.markerGroup.eachLayer((m) =>
+          m.setStyle({ opacity: dotOpacity, fillOpacity: dotOpacity })
+        );
+      }
     });
-    styleElem.textContent = `.track-line, .data-dot { filter: ${
-      lineShadow ? "drop-shadow(0 0 2px #000)" : "none"
-    }; }`;
+    styleElem.textContent = `.track-line, .data-dot { filter: drop-shadow(0 0 ${lineShadow}px #000); }`;
   };
 
   /* ------------------ MAIN LOAD ------------------ */
@@ -334,6 +383,7 @@ window.addEventListener("load", () => {
           visible: true,
           hue,
           swatch,
+          markerGroup: null,
         };
 
 
@@ -699,8 +749,13 @@ window.addEventListener("load", () => {
     if (trackView) {
       if (t.visible) {
         lineLayer.addLayer(t.line);
+        if (showTrackDots) {
+          if (!t.markerGroup) renderTrackDots();
+          else trackDotLayer.addLayer(t.markerGroup);
+        }
       } else {
         lineLayer.removeLayer(t.line);
+        if (t.markerGroup) trackDotLayer.removeLayer(t.markerGroup);
       }
     }
     drawDots();
@@ -714,12 +769,15 @@ window.addEventListener("load", () => {
     if (trackView) {
       pointLayer.clearLayers();
       lineLayer.clearLayers();
+      trackDotLayer.clearLayers();
       Object.values(tracks).forEach((t) => {
         if (t.visible) lineLayer.addLayer(t.line);
       });
       updateLineStyles();
+      renderTrackDots();
     } else {
       lineLayer.clearLayers();
+      trackDotLayer.clearLayers();
       drawDots();
     }
 
@@ -739,8 +797,29 @@ window.addEventListener("load", () => {
       updateLineStyles();
     }
   });
-  lineShadowToggle.addEventListener("change", (e) => {
-    lineShadow = e.target.checked;
-    updateLineStyles();
+  lineOpacityInput.addEventListener("input", (e) => {
+    const v = parseFloat(e.target.value);
+    if (!isNaN(v)) {
+      lineOpacity = v;
+      updateLineStyles();
+    }
+  });
+  lineShadowSlider.addEventListener("input", (e) => {
+    const v = parseFloat(e.target.value);
+    if (!isNaN(v)) {
+      lineShadow = v;
+      updateLineStyles();
+    }
+  });
+  dotOpacitySlider.addEventListener("input", (e) => {
+    const v = parseFloat(e.target.value);
+    if (!isNaN(v)) {
+      dotOpacity = v;
+      updateLineStyles();
+    }
+  });
+  showTrackDotsToggle.addEventListener("change", (e) => {
+    showTrackDots = e.target.checked;
+    renderTrackDots();
   });
 });
