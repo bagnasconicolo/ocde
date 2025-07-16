@@ -20,14 +20,18 @@ try {
 
 sites.forEach(site => {
   const siteDir = path.join(imagesDir, site.id);
+  let files = [];
   if (fs.existsSync(siteDir) && fs.statSync(siteDir).isDirectory()) {
-    const files = fs
+    files = fs
       .readdirSync(siteDir)
       .filter(f => /\.(jpe?g|png|gif|webp)$/i.test(f))
       .sort();
-    if (files.length > 0) {
-      site.images = files.map(f => `data/images/${site.id}/${f}`);
-    }
+  }
+
+  if (files.length > 0) {
+    site.images = files.map(f => `data/images/${site.id}/${f}`);
+  } else {
+    site.images = [];
   }
 });
 
