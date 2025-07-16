@@ -5,7 +5,7 @@ const FALLBACK_TRACK_FILES = [
 
 window.addEventListener("load", () => {
   const styleElem = document.createElement("style");
-  styleElem.textContent = `.track-line, .data-dot { filter: drop-shadow(0 0 2px #000); }`;
+  styleElem.textContent = `.track-line, .glass-dot { filter: drop-shadow(0 0 2px #000); }`;
   document.head.appendChild(styleElem);
   /* ------------------ MAP ------------------ */
   const map = L.map("map", {
@@ -439,53 +439,53 @@ window.addEventListener("load", () => {
               <h3 class='text-lg font-semibold'>${fname.split("/").pop()}</h3>
             </div>
             <div class='grid grid-cols-3 gap-2 sm:gap-4 mb-4 text-center text-xs sm:text-sm'>
-              <div class='bg-gray-900/40 p-2 rounded-lg shadow'>
+              <div class='glass-panel p-2 rounded-lg'>
                 <div class='text-gray-400'>Dose min</div>
                 <div id='stat-min-dose-${uid}' class='text-lg font-semibold text-sky-400'>0</div>
                 <div class='text-gray-400'>µSv/h</div>
               </div>
-              <div class='bg-gray-900/40 p-2 rounded-lg shadow'>
+              <div class='glass-panel p-2 rounded-lg'>
                 <div class='text-gray-400'>Dose avg</div>
                 <div id='stat-avg-dose-${uid}' class='text-lg font-semibold text-sky-400'>0</div>
                 <div class='text-gray-400'>µSv/h</div>
               </div>
-              <div class='bg-gray-900/40 p-2 rounded-lg shadow'>
+              <div class='glass-panel p-2 rounded-lg'>
                 <div class='text-gray-400'>Dose max</div>
                 <div id='stat-max-dose-${uid}' class='text-lg font-semibold text-sky-400'>0</div>
                 <div class='text-gray-400'>µSv/h</div>
               </div>
-              <div class='bg-gray-900/40 p-2 rounded-lg shadow'>
+              <div class='glass-panel p-2 rounded-lg'>
                 <div class='text-gray-400'>CPS min</div>
                 <div id='stat-min-cps-${uid}' class='text-lg font-semibold text-amber-400'>0</div>
                 <div class='text-gray-400'>cps</div>
               </div>
-              <div class='bg-gray-900/40 p-2 rounded-lg shadow'>
+              <div class='glass-panel p-2 rounded-lg'>
                 <div class='text-gray-400'>CPS avg</div>
                 <div id='stat-avg-cps-${uid}' class='text-lg font-semibold text-amber-400'>0</div>
                 <div class='text-gray-400'>cps</div>
               </div>
-              <div class='bg-gray-900/40 p-2 rounded-lg shadow'>
+              <div class='glass-panel p-2 rounded-lg'>
                 <div class='text-gray-400'>CPS max</div>
                 <div id='stat-max-cps-${uid}' class='text-lg font-semibold text-amber-400'>0</div>
                 <div class='text-gray-400'>cps</div>
               </div>
             </div>
             <div class='grid md:grid-cols-2 md:grid-rows-2 gap-4 text-white'>
-              <div class='bg-gray-900/40 p-4 rounded-lg shadow'>
+              <div class='glass-panel p-4 rounded-lg'>
                 <label class='block text-xs mb-1'>CPS Avg window: <span id='valCps-${uid}'>1</span></label>
                 <input type='range' min='1' max='50' value='1' id='${sliderCpsId}' class='w-full mb-2 accent-teal-500'>
                 <div id='${plotCpsId}' class='w-full h-96'></div>
               </div>
-              <div class='bg-gray-900/40 p-4 rounded-lg shadow'>
+              <div class='glass-panel p-4 rounded-lg'>
                 <h4 class='text-sm font-semibold mb-2'>CPS histogram</h4>
                 <div id='${histCpsId}' class='w-full h-96'></div>
               </div>
-              <div class='bg-gray-900/40 p-4 rounded-lg shadow'>
+              <div class='glass-panel p-4 rounded-lg'>
                 <label class='block text-xs mb-1'>Dose Avg window: <span id='valDose-${uid}'>1</span></label>
                 <input type='range' min='1' max='50' value='1' id='${sliderDoseId}' class='w-full mb-2 accent-teal-500'>
                 <div id='${plotDoseId}' class='w-full h-96'></div>
               </div>
-              <div class='bg-gray-900/40 p-4 rounded-lg shadow'>
+              <div class='glass-panel p-4 rounded-lg'>
                 <h4 class='text-sm font-semibold mb-2'>Dose histogram</h4>
                 <div id='${histDoseId}' class='w-full h-96'></div>
               </div>
@@ -733,7 +733,7 @@ window.addEventListener("load", () => {
         color: color,
         fillOpacity: 0.5,
         weight: 0,
-        className: "data-dot",
+        className: "data-dot glass-dot",
       }).addTo(pointLayer);
 
       const dateStr =
@@ -745,19 +745,19 @@ window.addEventListener("load", () => {
       let popupHtml = `<div class='prose prose-sm prose-invert'>`;
       popupHtml +=
         `<div class='grid grid-cols-${cols} gap-2 text-center text-xs'>` +
-        `<div class='bg-gray-900/40 p-2 rounded-lg shadow'>` +
+        `<div class='glass-panel p-2 rounded-lg'>` +
         `<div class='text-gray-400'>Dose</div>` +
         `<div class='text-lg font-semibold text-sky-400'>${p.dose.toFixed(3)}</div>` +
         `<div class='text-gray-400'>µSv/h</div>` +
         `</div>` +
-        `<div class='bg-gray-900/40 p-2 rounded-lg shadow'>` +
+        `<div class='glass-panel p-2 rounded-lg'>` +
         `<div class='text-gray-400'>CPS</div>` +
         `<div class='text-lg font-semibold text-amber-400'>${p.cps.toFixed(1)}</div>` +
         `<div class='text-gray-400'>cps</div>` +
         `</div>`;
       if (hasEnergy) {
         popupHtml +=
-          `<div class='bg-gray-900/40 p-2 rounded-lg shadow'>` +
+          `<div class='glass-panel p-2 rounded-lg'>` +
           `<div class='text-gray-400'>Energy</div>` +
           `<div class='text-lg font-semibold text-purple-400'>${p.energy.toFixed(1)}</div>` +
           `<div class='text-gray-400'>keV</div>` +
