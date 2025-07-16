@@ -183,9 +183,10 @@ window.addEventListener("load", () => {
     if (val === 0) return "#777"; // zero measurements grey
     const t = Math.max(0, Math.min(1, (val - min) / (max - min || 1e-9)));
     let r, g;
+    const darkG = 96; // darker starting green
     if (t <= 0.5) {
       r = Math.round(t * 2 * 255); // dark green -> yellow
-      g = Math.round(128 + t * 2 * 127); // start from darker green
+      g = Math.round(darkG + t * 2 * (255 - darkG));
     } else {
       r = 255;
       g = Math.round(255 * (1 - (t - 0.5) * 2)); // yellow -> red
