@@ -105,6 +105,17 @@
           pointer-events: none;
           z-index: -1;
         }
+
+      @keyframes siteGlow {
+        0%, 100% { fill-opacity: 0.2; }
+        50% { fill-opacity: 0.6; }
+      }
+      .site-glow {
+        stroke: none;
+        fill: #2563eb;
+        filter: blur(4px);
+        animation: siteGlow 2s ease-in-out infinite;
+
       }
     </style>
   </head>
@@ -217,7 +228,7 @@
           </div>
         </details>
 
-        <details class="group bg-gray-700/50 rounded-lg p-2">
+        <details class="group glass-panel rounded-lg p-2">
           <summary class="cursor-pointer font-medium flex items-center hover:bg-gray-600/40 rounded transition-colors">
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -798,9 +809,11 @@
           Object.entries(siteMarkers).forEach(([id, m]) => {
             const c = L.circle(m.getLatLng(), {
               radius: siteRadius,
-              color: "#2563eb",
-              weight: 1,
-              fillOpacity: 0.05,
+              stroke: false,
+              fillColor: "#2563eb",
+              fillOpacity: 0.2,
+              className: "site-glow",
+              renderer: L.svg(),
             }).addTo(map);
             siteCircles[id] = c;
           });
@@ -1004,7 +1017,7 @@
                   <div class='grid md:grid-cols-2 md:grid-rows-2 gap-4 text-white'>
                     <div class='glass-panel p-4 rounded-lg'>
                       <label class='block text-xs mb-1'>Rate Avg window: <span id='valCps-${uid}'>1</span></label>
-                      <input type='range' min='1' max='50' value='1' id='${sliderCpsId}' class='w-full mb-2 accent-teal-500'>
+                      <input type='range' min='1' max='50' value='1' id='${sliderCpsId}' class='w-full mb-2 accent-amber-500'>
                       <div id='${plotCpsId}' class='w-full h-96'></div>
                     </div>
                     <div class='glass-panel p-4 rounded-lg'>
@@ -1013,7 +1026,7 @@
                     </div>
                     <div class='glass-panel p-4 rounded-lg'>
                       <label class='block text-xs mb-1'>Dose Avg window: <span id='valDose-${uid}'>1</span></label>
-                      <input type='range' min='1' max='50' value='1' id='${sliderDoseId}' class='w-full mb-2 accent-teal-500'>
+                      <input type='range' min='1' max='50' value='1' id='${sliderDoseId}' class='w-full mb-2 accent-sky-500'>
                       <div id='${plotDoseId}' class='w-full h-96'></div>
                     </div>
                     <div class='glass-panel p-4 rounded-lg'>
