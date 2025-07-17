@@ -61,6 +61,12 @@
     <script>
       fetch("nav.html").then(r => r.text()).then(html => {
         document.getElementById("nav-placeholder").outerHTML = html;
+        const current = location.pathname.split("/").pop() || "index.html";
+        document.querySelectorAll("nav a[href]").forEach(link => {
+          if (link.getAttribute("href") === current) {
+            link.classList.add("bg-gray-700/50");
+          }
+        });
       });
     </script>
   </body>
