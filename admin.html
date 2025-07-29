@@ -10,6 +10,7 @@
     <div id="nav-placeholder"></div>
     <main class="max-w-5xl mx-auto p-4 space-y-6" id="content"></main>
     <script>
+      let editingSite = null;
       fetch('nav.html').then(r => r.text()).then(html => {
         document.getElementById('nav-placeholder').outerHTML = html;
       });
@@ -40,7 +41,10 @@
             </div>
             <textarea id="description" rows="2" class="w-full bg-gray-700 rounded px-2 py-1" placeholder="Description"></textarea>
             <input id="references" placeholder="References comma separated" class="w-full bg-gray-700 rounded px-2 py-1" />
-            <button class="bg-green-600 hover:bg-green-500 px-4 py-1 rounded">Save</button>
+            <div class="flex gap-2">
+              <button id="siteFormSave" class="bg-green-600 hover:bg-green-500 px-4 py-1 rounded">Save</button>
+              <button type="button" id="siteFormCancel" class="hidden bg-gray-600 hover:bg-gray-500 px-4 py-1 rounded">Cancel</button>
+            </div>
           </form>`;
         const list = sec.querySelector('#siteList');
         list.innerHTML = '';
@@ -53,7 +57,7 @@
           div.innerHTML = `
             <div class="flex items-center justify-between">
               <span>${s.id} - ${s.title}</span>
-              <button data-id="${s.id}" class="deleteSite bg-red-600 hover:bg-red-500 px-2 py-1 rounded">Delete</button>
+              <div class="space-x-2"><button data-id="${s.id}" class="editSite bg-blue-600 hover:bg-blue-500 px-2 py-1 rounded text-sm">Edit</button> <button data-id="${s.id}" class="deleteSite bg-red-600 hover:bg-red-500 px-2 py-1 rounded">Delete</button></div>
             </div>
             <div class="flex flex-wrap gap-2">${imgs}</div>
             <form class="imageUploadForm flex items-center space-x-2" data-id="${s.id}">
@@ -62,6 +66,12 @@
             </form>
           `;
           list.appendChild(div);
+        });
+        list.querySelectorAll('.editSite').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const site = sites.find(s => s.id === btn.dataset.id);
+            if (site) startEdit(site);
+          });
         });
         list.querySelectorAll('.deleteSite').forEach(btn => {
           btn.addEventListener('click', async () => {
@@ -103,7 +113,7 @@
             lat: +f.lat.value,
             lon: +f.lon.value,
             description: f.description.value.trim(),
-            images: [],
+            images: editingSite && editingSite.images ? editingSite.images : [],
             references: f.references.value.split(',').map(s=>s.trim()).filter(Boolean)
           };
           await fetch('/api/sites', {
@@ -111,9 +121,34 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(site)
           });
-          f.reset();
+          cancelEdit();
           loadSites();
         });
+        sec.querySelector('#siteFormCancel').addEventListener('click', cancelEdit);
+      }
+
+      function startEdit(site) {
+        editingSite = site;
+        const f = document.getElementById('siteForm');
+        f.siteId.value = site.id;
+        f.siteId.disabled = true;
+        f.title.value = site.title;
+        f.lat.value = site.lat;
+        f.lon.value = site.lon;
+        f.description.value = site.description || '';
+        f.references.value = (site.references || []).join(', ');
+        document.getElementById('siteFormSave').textContent = 'Update';
+        document.getElementById('siteFormCancel').classList.remove('hidden');
+        f.scrollIntoView({ behavior: 'smooth' });
+      }
+
+      function cancelEdit() {
+        editingSite = null;
+        const f = document.getElementById('siteForm');
+        f.reset();
+        f.siteId.disabled = false;
+        document.getElementById('siteFormSave').textContent = 'Save';
+        document.getElementById('siteFormCancel').classList.add('hidden');
       }
 
       async function loadTracks() {
