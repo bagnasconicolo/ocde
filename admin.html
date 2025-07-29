@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Admin Dashboard</title>
+    <script src="https://cdn.tailwindcss.com?plugins=typography" defer></script>
+  </head>
+  <body class="bg-gray-900 text-gray-200 pt-14">
+    <div id="nav-placeholder"></div>
+    <main class="max-w-5xl mx-auto p-4 space-y-6" id="content"></main>
+    <script>
+      fetch('nav.html').then(r => r.text()).then(html => {
+        document.getElementById('nav-placeholder').outerHTML = html;
+      });
+
+      async function authCheck() {
+        const r = await fetch('/api/auth-check');
+        return (await r.json()).loggedIn;
+      }
+
+      async function showLogin() {
+        const content = document.getElementById('content');
+        content.innerHTML = `<form id="loginForm" class="bg-gray-800 p-6 rounded space-y-4 max-w-sm mx-auto">
+            <h1 class="text-xl font-semibold">Admin Login</h1>
+            <input type="password" id="pw" class="w-full bg-gray-700 rounded px-3 py-2" placeholder="Password" />
+            <button class="bg-blue-600 hover:bg-blue-500 px-4 py-2 rounded w-full">Login</button>
+          </form>`;
+        document.getElementById('loginForm').addEventListener('submit', async e => {
+          e.preventDefault();
+          const res = await fetch('/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password: document.getElementById('pw').value })
+          });
+          if (res.ok) loadDashboard();
+          else alert('Invalid password');
+        });
+      }
+
+      async function loadDashboard() {
+        const content = document.getElementById('content');
+        content.innerHTML = `
+          <h1 class="text-2xl font-semibold">Admin Dashboard</h1>
+          <section id="siteSection" class="space-y-4"></section>
+          <section id="trackSection" class="space-y-4"></section>
+        `;
+        loadSites();
+        loadTracks();
+      }
+
+      async function loadSites() {
+        const r = await fetch('/api/sites');
+        const sites = await r.json();
+        const sec = document.getElementById('siteSection');
+        sec.innerHTML = `<h2 class="text-xl font-medium">Sites</h2>
+          <div class="space-y-2" id="siteList"></div>
+          <form id="siteForm" class="bg-gray-800 p-4 rounded space-y-2">
+            <input id="siteId" placeholder="ID" class="w-full bg-gray-700 rounded px-2 py-1" required />
+            <input id="title" placeholder="Title" class="w-full bg-gray-700 rounded px-2 py-1" required />
+            <div class="grid grid-cols-2 gap-2">
+              <input id="lat" type="number" step="any" placeholder="Lat" class="bg-gray-700 rounded px-2 py-1" required />
+              <input id="lon" type="number" step="any" placeholder="Lon" class="bg-gray-700 rounded px-2 py-1" required />
+            </div>
+            <textarea id="description" rows="2" class="w-full bg-gray-700 rounded px-2 py-1" placeholder="Description"></textarea>
+            <input id="references" placeholder="References comma separated" class="w-full bg-gray-700 rounded px-2 py-1" />
+            <button class="bg-green-600 hover:bg-green-500 px-4 py-1 rounded">Save</button>
+          </form>`;
+        const list = sec.querySelector('#siteList');
+        sites.forEach(s => {
+          const div = document.createElement('div');
+          div.className = 'bg-gray-800 p-2 rounded flex items-center justify-between';
+          div.innerHTML = `<span>${s.id} - ${s.title}</span>
+            <button data-id="${s.id}" class="deleteSite bg-red-600 hover:bg-red-500 px-2 py-1 rounded">Delete</button>`;
+          list.appendChild(div);
+        });
+        list.querySelectorAll('.deleteSite').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            if (!confirm('Delete site?')) return;
+            await fetch('/api/sites/' + btn.dataset.id, { method: 'DELETE' });
+            loadSites();
+          });
+        });
+        sec.querySelector('#siteForm').addEventListener('submit', async e => {
+          e.preventDefault();
+          const f = e.target;
+          const site = {
+            id: f.siteId.value.trim(),
+            title: f.title.value.trim(),
+            lat: +f.lat.value,
+            lon: +f.lon.value,
+            description: f.description.value.trim(),
+            images: [],
+            references: f.references.value.split(',').map(s=>s.trim()).filter(Boolean)
+          };
+          await fetch('/api/sites', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(site)
+          });
+          f.reset();
+          loadSites();
+        });
+      }
+
+      async function loadTracks() {
+        const r = await fetch('/api/tracks');
+        const tracks = await r.json();
+        const sec = document.getElementById('trackSection');
+        sec.innerHTML = `<h2 class="text-xl font-medium">Tracks</h2>
+          <div class="space-y-2" id="trackList"></div>
+          <form id="trackForm" class="bg-gray-800 p-4 rounded space-y-2" enctype="multipart/form-data">
+            <input type="file" name="file" accept=".rctrk" class="w-full bg-gray-700 rounded" required />
+            <button class="bg-green-600 hover:bg-green-500 px-4 py-1 rounded">Upload</button>
+          </form>`;
+        const list = sec.querySelector('#trackList');
+        list.innerHTML = '';
+        tracks.forEach(t => {
+          const div = document.createElement('div');
+          div.className = 'bg-gray-800 p-2 rounded flex items-center justify-between';
+          div.innerHTML = `<span>${t}</span>
+            <button data-file="${t}" class="deleteTrack bg-red-600 hover:bg-red-500 px-2 py-1 rounded">Delete</button>`;
+          list.appendChild(div);
+        });
+        list.querySelectorAll('.deleteTrack').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            if (!confirm('Delete track?')) return;
+            await fetch('/api/tracks', {
+              method: 'DELETE',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ file: btn.dataset.file })
+            });
+            loadTracks();
+          });
+        });
+        sec.querySelector('#trackForm').addEventListener('submit', async e => {
+          e.preventDefault();
+          const fd = new FormData(e.target);
+          await fetch('/api/tracks', { method: 'POST', body: fd });
+          e.target.reset();
+          loadTracks();
+        });
+      }
+
+      (async () => {
+        if (await authCheck()) loadDashboard();
+        else showLogin();
+      })();
+    </script>
+  </body>
+</html>
