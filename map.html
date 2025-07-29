@@ -126,6 +126,7 @@
         fill-opacity: 0.25;
         backdrop-filter: blur(6px) saturate(150%);
         -webkit-backdrop-filter: blur(6px) saturate(150%);
+        pointer-events: none;
       }
       .site-glow-anim {
         animation: siteGlow 1.5s ease-in-out;
@@ -892,6 +893,7 @@
               fillOpacity: 0.25,
               className: "site-glow",
               renderer: L.svg(),
+              interactive: false,
             }).addTo(map);
             triggerGlow(c);
             siteCircles[id] = c;
