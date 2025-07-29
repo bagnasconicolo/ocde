@@ -1,40 +1,21 @@
 const express = require('express');
-const session = require('express-session');
 const fs = require('fs');
 const path = require('path');
 const multer = require('multer');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const PASSWORD = process.env.ADMIN_PASSWORD || 'admin';
 const DATA_DIR = path.join(__dirname, 'data');
 
 app.use(express.json());
-app.use(session({ secret: 'ocde-secret', resave: false, saveUninitialized: false }));
+// No session or authentication required
 
 // Authentication middleware
 function requireAuth(req, res, next) {
-  if (req.session.loggedIn) return next();
-  res.status(401).json({ error: 'Unauthorized' });
+  // Authentication removed; all requests are allowed
+  return next();
 }
 
-app.post('/login', (req, res) => {
-  const { password } = req.body;
-  if (password === PASSWORD) {
-    req.session.loggedIn = true;
-    res.json({ ok: true });
-  } else {
-    res.status(401).json({ error: 'Invalid password' });
-  }
-});
-
-app.post('/logout', (req, res) => {
-  req.session.destroy(() => res.json({ ok: true }));
-});
-
-app.get('/api/auth-check', (req, res) => {
-  res.json({ loggedIn: !!req.session.loggedIn });
-});
 
 // Serve static files
 app.use(express.static(__dirname));
