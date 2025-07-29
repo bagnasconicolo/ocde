@@ -14,8 +14,13 @@
         document.getElementById('nav-placeholder').outerHTML = html;
       });
 
+      function authHeaders() {
+        const token = localStorage.getItem('token');
+        return token ? { Authorization: 'Bearer ' + token } : {};
+      }
+
       async function authCheck() {
-        const r = await fetch('/api/auth-check');
+        const r = await fetch('/api/auth-check', { headers: authHeaders() });
         return (await r.json()).loggedIn;
       }
 
@@ -33,8 +38,11 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ password: document.getElementById('pw').value })
           });
-          if (res.ok) loadDashboard();
-          else alert('Invalid password');
+          if (res.ok) {
+            const data = await res.json();
+            localStorage.setItem('token', data.token);
+            loadDashboard();
+          } else alert('Invalid password');
         });
       }
 
@@ -50,7 +58,7 @@
       }
 
       async function loadSites() {
-        const r = await fetch('/api/sites');
+        const r = await fetch('/api/sites', { headers: authHeaders() });
         const sites = await r.json();
         const sec = document.getElementById('siteSection');
         sec.innerHTML = `<h2 class="text-xl font-medium">Sites</h2>
@@ -90,7 +98,7 @@
         list.querySelectorAll('.deleteSite').forEach(btn => {
           btn.addEventListener('click', async () => {
             if (!confirm('Delete site?')) return;
-            await fetch('/api/sites/' + btn.dataset.id, { method: 'DELETE' });
+            await fetch('/api/sites/' + btn.dataset.id, { method: 'DELETE', headers: authHeaders() });
             loadSites();
           });
         });
@@ -99,7 +107,7 @@
             e.preventDefault();
             const siteId = form.dataset.id;
             const fd = new FormData(form);
-            const res = await fetch('/api/images/' + siteId, { method: 'POST', body: fd });
+            const res = await fetch('/api/images/' + siteId, { method: 'POST', headers: authHeaders(), body: fd });
             if (res.ok) {
               const { file } = await res.json();
               const site = sites.find(s => s.id === siteId);
@@ -108,7 +116,7 @@
                 site.images.push(file);
                 await fetch('/api/sites', {
                   method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
+                  headers: { ...authHeaders(), 'Content-Type': 'application/json' },
                   body: JSON.stringify(site)
                 });
               }
@@ -132,7 +140,7 @@
           };
           await fetch('/api/sites', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { ...authHeaders(), 'Content-Type': 'application/json' },
             body: JSON.stringify(site)
           });
           f.reset();
@@ -141,7 +149,7 @@
       }
 
       async function loadTracks() {
-        const r = await fetch('/api/tracks');
+        const r = await fetch('/api/tracks', { headers: authHeaders() });
         const tracks = await r.json();
         const sec = document.getElementById('trackSection');
         sec.innerHTML = `<h2 class="text-xl font-medium">Tracks</h2>
@@ -164,7 +172,7 @@
             if (!confirm('Delete track?')) return;
             await fetch('/api/tracks', {
               method: 'DELETE',
-              headers: { 'Content-Type': 'application/json' },
+              headers: { ...authHeaders(), 'Content-Type': 'application/json' },
               body: JSON.stringify({ file: btn.dataset.file })
             });
             loadTracks();
@@ -173,7 +181,7 @@
         sec.querySelector('#trackForm').addEventListener('submit', async e => {
           e.preventDefault();
           const fd = new FormData(e.target);
-          await fetch('/api/tracks', { method: 'POST', body: fd });
+          await fetch('/api/tracks', { method: 'POST', headers: authHeaders(), body: fd });
           e.target.reset();
           loadTracks();
         });

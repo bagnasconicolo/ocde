@@ -1,5 +1,5 @@
 const express = require('express');
-const session = require('express-session');
+const jwt = require('jsonwebtoken');
 const fs = require('fs');
 const path = require('path');
 const multer = require('multer');
@@ -7,33 +7,45 @@ const multer = require('multer');
 const app = express();
 const PORT = process.env.PORT || 3000;
 const PASSWORD = process.env.ADMIN_PASSWORD || 'admin';
+const JWT_SECRET = process.env.JWT_SECRET || 'secret';
 const DATA_DIR = path.join(__dirname, 'data');
 
 app.use(express.json());
-app.use(session({ secret: 'ocde-secret', resave: false, saveUninitialized: false }));
 
 // Authentication middleware
 function requireAuth(req, res, next) {
-  if (req.session.loggedIn) return next();
-  res.status(401).json({ error: 'Unauthorized' });
+  const auth = req.headers.authorization || '';
+  const token = auth.split(' ')[1];
+  if (!token) return res.status(401).json({ error: 'Unauthorized' });
+  jwt.verify(token, JWT_SECRET, (err, decoded) => {
+    if (err) return res.status(401).json({ error: 'Unauthorized' });
+    req.user = decoded;
+    next();
+  });
 }
 
 app.post('/login', (req, res) => {
   const { password } = req.body;
   if (password === PASSWORD) {
-    req.session.loggedIn = true;
-    res.json({ ok: true });
+    const token = jwt.sign({ user: 'admin' }, JWT_SECRET, { expiresIn: '1h' });
+    res.json({ ok: true, token });
   } else {
     res.status(401).json({ error: 'Invalid password' });
   }
 });
 
 app.post('/logout', (req, res) => {
-  req.session.destroy(() => res.json({ ok: true }));
+  // Client should discard token; nothing to do server-side
+  res.json({ ok: true });
 });
 
 app.get('/api/auth-check', (req, res) => {
-  res.json({ loggedIn: !!req.session.loggedIn });
+  const auth = req.headers.authorization || '';
+  const token = auth.split(' ')[1];
+  if (!token) return res.json({ loggedIn: false });
+  jwt.verify(token, JWT_SECRET, err => {
+    res.json({ loggedIn: !err });
+  });
 });
 
 // Serve static files
