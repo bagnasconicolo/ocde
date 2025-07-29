@@ -572,12 +572,17 @@
             imagePopup.classList.remove("opacity-100");
           });
         let galleryImages = [];
+        let galleryCaptions = [];
+        let galleryTitle = '';
         let galleryIndex = 0;
-        const openImagePopup = (images, idx, title, desc) => {
+        const openImagePopup = (images, captions, idx, title, desc) => {
           galleryImages = images;
+          galleryCaptions = captions || [];
+          galleryTitle = title;
           galleryIndex = idx;
           imagePopupImg.src = images[idx];
-          imagePopupCaption.innerHTML = `<h3 class='font-semibold mb-1'>${title}</h3>` + (desc ? `<p>${desc}</p>` : "");
+          const cap = galleryCaptions[idx] || desc || '';
+          imagePopupCaption.innerHTML = `<h3 class='font-semibold mb-1'>${title}</h3>` + (cap ? `<p>${cap}</p>` : '');
           imagePopup.classList.remove("pointer-events-none", "opacity-0");
           imagePopup.classList.add("opacity-100");
         };
@@ -585,6 +590,8 @@
           if (!galleryImages.length) return;
           galleryIndex = (galleryIndex + dir + galleryImages.length) % galleryImages.length;
           imagePopupImg.src = galleryImages[galleryIndex];
+          const cap = galleryCaptions[galleryIndex] || '';
+          imagePopupCaption.innerHTML = `<h3 class='font-semibold mb-1'>${galleryTitle}</h3>` + (cap ? `<p>${cap}</p>` : '');
         };
         imagePopupPrev.addEventListener("click", () => showGalleryImage(-1));
         imagePopupNext.addEventListener("click", () => showGalleryImage(1));
@@ -923,7 +930,8 @@
             if (Array.isArray(s.images) && s.images.length) {
               html += `<h4>Gallery</h4><div class='flex gap-2 mt-2 overflow-x-auto border border-gray-700 rounded p-2 bg-gray-900/40'>`;
               s.images.forEach((img, i) => {
-                html += `<img src='${img}' data-index='${i}' class='site-thumb w-16 h-16 object-cover rounded cursor-pointer'/>`;
+                const cap = (s.captions || [])[i] || '';
+                html += `<img src='${img}' data-index='${i}' class='site-thumb w-16 h-16 object-cover rounded cursor-pointer' title='${cap}'/>`;
               });
               html += `</div>`;
             }
@@ -943,7 +951,8 @@
               if (Array.isArray(s.images) && s.images.length) {
                 content += `<h4>Gallery</h4><div class='flex gap-2 mt-2 overflow-x-auto border border-gray-700 rounded p-2 bg-gray-900/40'>`;
                 s.images.forEach((img, i) => {
-                  content += `<img src='${img}' data-index='${i}' class='site-thumb w-16 h-16 object-cover rounded cursor-pointer'/>`;
+                  const cap = (s.captions || [])[i] || '';
+                  content += `<img src='${img}' data-index='${i}' class='site-thumb w-16 h-16 object-cover rounded cursor-pointer' title='${cap}'/>`;
                 });
                 content += `</div>`;
               }
@@ -972,7 +981,7 @@
               popupEl.querySelectorAll('.site-thumb').forEach((imgEl) => {
                 imgEl.addEventListener('click', () => {
                   const idx = parseInt(imgEl.dataset.index);
-                  openImagePopup(s.images, idx, s.title ?? '', s.description ?? '');
+                  openImagePopup(s.images, s.captions || [], idx, s.title ?? '', s.description ?? '');
                 });
               });
             });
