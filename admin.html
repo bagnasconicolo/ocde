@@ -41,6 +41,7 @@
             </div>
             <textarea id="description" rows="2" class="w-full bg-gray-700 rounded px-2 py-1" placeholder="Description"></textarea>
             <input id="references" placeholder="References comma separated" class="w-full bg-gray-700 rounded px-2 py-1" />
+            <div id="imageCaptions" class="space-y-2"></div>
             <div class="flex gap-2">
               <button id="siteFormSave" class="bg-green-600 hover:bg-green-500 px-4 py-1 rounded">Save</button>
               <button type="button" id="siteFormCancel" class="hidden bg-gray-600 hover:bg-gray-500 px-4 py-1 rounded">Cancel</button>
@@ -91,7 +92,9 @@
               const site = sites.find(s => s.id === siteId);
               if (site) {
                 if (!site.images) site.images = [];
+                if (!site.captions) site.captions = [];
                 site.images.push(file);
+                site.captions.push('');
                 await fetch('/api/sites', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
@@ -114,6 +117,7 @@
             lon: +f.lon.value,
             description: f.description.value.trim(),
             images: editingSite && editingSite.images ? editingSite.images : [],
+            captions: Array.from(document.querySelectorAll('#imageCaptions .captionInput')).map(i => i.value.trim()),
             references: f.references.value.split(',').map(s=>s.trim()).filter(Boolean)
           };
           await fetch('/api/sites', {
@@ -137,6 +141,7 @@
         f.lon.value = site.lon;
         f.description.value = site.description || '';
         f.references.value = (site.references || []).join(', ');
+        renderCaptions(site);
         document.getElementById('siteFormSave').textContent = 'Update';
         document.getElementById('siteFormCancel').classList.remove('hidden');
         f.scrollIntoView({ behavior: 'smooth' });
@@ -147,8 +152,23 @@
         const f = document.getElementById('siteForm');
         f.reset();
         f.siteId.disabled = false;
+        document.getElementById('imageCaptions').innerHTML = '';
         document.getElementById('siteFormSave').textContent = 'Save';
         document.getElementById('siteFormCancel').classList.add('hidden');
+      }
+
+      function renderCaptions(site) {
+        const container = document.getElementById('imageCaptions');
+        container.innerHTML = '';
+        if (!site || !site.images) return;
+        const caps = site.captions || [];
+        site.images.forEach((img, i) => {
+          const div = document.createElement('div');
+          div.className = 'flex items-center gap-2';
+          div.innerHTML = `<img src="${img}" class="h-16 rounded" />` +
+            `<input data-index="${i}" class="captionInput flex-1 bg-gray-700 rounded px-2 py-1" placeholder="Caption" value="${caps[i] || ''}" />`;
+          container.appendChild(div);
+        });
       }
 
       async function loadTracks() {
