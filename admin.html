@@ -54,7 +54,7 @@
         const sites = await r.json();
         const sec = document.getElementById('siteSection');
         sec.innerHTML = `<h2 class="text-xl font-medium">Sites</h2>
-          <div class="space-y-2" id="siteList"></div>
+          <div class="space-y-4" id="siteList"></div>
           <form id="siteForm" class="bg-gray-800 p-4 rounded space-y-2">
             <input id="siteId" placeholder="ID" class="w-full bg-gray-700 rounded px-2 py-1" required />
             <input id="title" placeholder="Title" class="w-full bg-gray-700 rounded px-2 py-1" required />
@@ -67,11 +67,24 @@
             <button class="bg-green-600 hover:bg-green-500 px-4 py-1 rounded">Save</button>
           </form>`;
         const list = sec.querySelector('#siteList');
+        list.innerHTML = '';
         sites.forEach(s => {
           const div = document.createElement('div');
-          div.className = 'bg-gray-800 p-2 rounded flex items-center justify-between';
-          div.innerHTML = `<span>${s.id} - ${s.title}</span>
-            <button data-id="${s.id}" class="deleteSite bg-red-600 hover:bg-red-500 px-2 py-1 rounded">Delete</button>`;
+          div.className = 'bg-gray-800 p-4 rounded space-y-2';
+          const imgs = (s.images || [])
+            .map(img => `<img src="${img}" class="h-20 rounded" />`)
+            .join('');
+          div.innerHTML = `
+            <div class="flex items-center justify-between">
+              <span>${s.id} - ${s.title}</span>
+              <button data-id="${s.id}" class="deleteSite bg-red-600 hover:bg-red-500 px-2 py-1 rounded">Delete</button>
+            </div>
+            <div class="flex flex-wrap gap-2">${imgs}</div>
+            <form class="imageUploadForm flex items-center space-x-2" data-id="${s.id}">
+              <input type="file" name="image" accept="image/*" class="bg-gray-700 rounded p-1 text-sm" required />
+              <button class="bg-blue-600 hover:bg-blue-500 px-2 py-1 rounded text-sm">Upload</button>
+            </form>
+          `;
           list.appendChild(div);
         });
         list.querySelectorAll('.deleteSite').forEach(btn => {
@@ -79,6 +92,30 @@
             if (!confirm('Delete site?')) return;
             await fetch('/api/sites/' + btn.dataset.id, { method: 'DELETE' });
             loadSites();
+          });
+        });
+        list.querySelectorAll('.imageUploadForm').forEach(form => {
+          form.addEventListener('submit', async e => {
+            e.preventDefault();
+            const siteId = form.dataset.id;
+            const fd = new FormData(form);
+            const res = await fetch('/api/images/' + siteId, { method: 'POST', body: fd });
+            if (res.ok) {
+              const { file } = await res.json();
+              const site = sites.find(s => s.id === siteId);
+              if (site) {
+                if (!site.images) site.images = [];
+                site.images.push(file);
+                await fetch('/api/sites', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(site)
+                });
+              }
+              loadSites();
+            } else {
+              alert('Image upload failed');
+            }
           });
         });
         sec.querySelector('#siteForm').addEventListener('submit', async e => {
