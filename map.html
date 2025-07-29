@@ -638,11 +638,12 @@
           try {
             const js = JSON.parse(text);
             if (Array.isArray(js.markers)) {
+              const factor = js.sv === false ? 0.01 : 1;
               const points = js.markers
                 .map((m) => ({
                   lat: +m.lat,
                   lon: +m.lon,
-                  dose: +(m.doseRate ?? m.dose_uSv_h ?? m.dose ?? 0),
+                  dose: +(m.doseRate ?? m.dose_uSv_h ?? m.dose ?? 0) * factor,
                   cps: +(m.countRate ?? m.cps ?? 0),
                   energy: +(m.energy ?? m.energyValue ?? m.energy_ev ?? NaN),
                   date: +m.date || 0,
