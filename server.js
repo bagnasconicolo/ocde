@@ -75,23 +75,55 @@ app.delete('/api/sites/:id', requireAuth, (req, res) => {
 
 /* ----- TRACK ENDPOINTS ----- */
 app.get('/api/tracks', requireAuth, (req, res) => {
-  res.json(readJson('track_index.json'));
+  let index = readJson('track_index.json');
+  if (Array.isArray(index)) {
+    index = index.map((t) =>
+      typeof t === 'string' ? { file: t, title: '', description: '' } : t
+    );
+  } else {
+    index = [];
+  }
+  res.json(index);
 });
 
 const trackStorage = multer({ dest: DATA_DIR });
 app.post('/api/tracks', requireAuth, trackStorage.single('file'), (req, res) => {
-  const index = readJson('track_index.json');
+  let index = readJson('track_index.json');
+  if (!Array.isArray(index)) index = [];
   const filePath = `data/${req.file.filename}.rctrk`;
   fs.renameSync(req.file.path, path.join(DATA_DIR, path.basename(filePath)));
-  index.push(filePath);
+  const entry = {
+    file: filePath,
+    title: req.body.title || '',
+    description: req.body.description || ''
+  };
+  index.push(entry);
   writeJson('track_index.json', index);
   res.json({ ok: true, file: filePath });
 });
 
+app.put('/api/tracks', requireAuth, (req, res) => {
+  const { file, title = '', description = '' } = req.body;
+  let index = readJson('track_index.json');
+  if (!Array.isArray(index)) index = [];
+  index = index.map((t) => {
+    if ((typeof t === 'string' ? t : t.file) === file) {
+      return { file, title, description };
+    }
+    return t;
+  });
+  writeJson('track_index.json', index);
+  res.json({ ok: true });
+});
+
 app.delete('/api/tracks', requireAuth, (req, res) => {
   const { file } = req.body;
-  const index = readJson('track_index.json').filter((f) => f !== file);
-  if (fs.existsSync(path.join(__dirname, file))) fs.unlinkSync(path.join(__dirname, file));
+  let index = readJson('track_index.json');
+  if (!Array.isArray(index)) index = [];
+  index = index.filter((t) => (typeof t === 'string' ? t : t.file) !== file);
+  if (fs.existsSync(path.join(__dirname, file))) {
+    fs.unlinkSync(path.join(__dirname, file));
+  }
   writeJson('track_index.json', index);
   res.json({ ok: true });
 });
