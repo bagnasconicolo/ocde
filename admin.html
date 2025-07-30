@@ -59,12 +59,16 @@
         sites.forEach(s => {
           const div = document.createElement('div');
           div.className = 'bg-gray-800 p-4 rounded space-y-2';
-          const imgs = (s.images || [])
-            .map((img, idx) => {
-              const cap = (s.captions || [])[idx] || '';
-              return `<img src="${img}" class="h-20 rounded" alt="${cap}" />`;
-            })
-            .join('');
+        const imgs = (s.images || [])
+          .map((img, idx) => {
+            const cap = (s.captions || [])[idx] || '';
+            const file = img.split('/').pop();
+            return `<div class="relative group">` +
+              `<img src="${img}" class="h-20 rounded" alt="${cap}" />` +
+              `<button type="button" data-site="${s.id}" data-file="${file}" class="deleteImg hidden group-hover:block absolute top-1 right-1 bg-red-600 hover:bg-red-500 text-xs px-1 rounded">&times;</button>` +
+              `</div>`;
+          })
+          .join('');
           div.innerHTML = `
             <div class="flex items-center justify-between">
               <span>${s.id} - ${s.title}</span>
@@ -88,6 +92,13 @@
           btn.addEventListener('click', async () => {
             if (!confirm('Delete site?')) return;
             await fetch('/api/sites/' + btn.dataset.id, { method: 'DELETE' });
+            loadSites();
+          });
+        });
+        list.querySelectorAll('.deleteImg').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            if (!confirm('Delete image?')) return;
+            await fetch(`/api/images/${btn.dataset.site}/${btn.dataset.file}`, { method: 'DELETE' });
             loadSites();
           });
         });
@@ -175,9 +186,25 @@
         site.images.forEach((img, i) => {
           const div = document.createElement('div');
           div.className = 'flex items-center gap-2';
-          div.innerHTML = `<img src="${img}" class="h-16 rounded" alt="${caps[i] || ''}" />` +
-            `<input data-index="${i}" class="captionInput flex-1 bg-gray-700 rounded px-2 py-1" placeholder="Caption" value="${caps[i] || ''}" />`;
+          const file = img.split('/').pop();
+          div.innerHTML =
+            `<img src="${img}" class="h-16 rounded" alt="${caps[i] || ''}" />` +
+            `<input data-index="${i}" class="captionInput flex-1 bg-gray-700 rounded px-2 py-1" placeholder="Caption" value="${caps[i] || ''}" />` +
+            `<button type="button" data-site="${site.id}" data-file="${file}" class="deleteEditImg bg-red-600 hover:bg-red-500 px-1 rounded text-xs">&times;</button>`;
           container.appendChild(div);
+        });
+        container.querySelectorAll('.deleteEditImg').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            if (!confirm('Delete image?')) return;
+            await fetch(`/api/images/${btn.dataset.site}/${btn.dataset.file}`, { method: 'DELETE' });
+            const idx = site.images.findIndex(img => img.endsWith(btn.dataset.file));
+            if (idx >= 0) {
+              site.images.splice(idx, 1);
+              if (Array.isArray(site.captions)) site.captions.splice(idx, 1);
+            }
+            renderCaptions(site);
+            loadSites();
+          });
         });
       }
 
