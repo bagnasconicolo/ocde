@@ -1,9 +1,9 @@
 const fs = require('fs');
 const path = require('path');
 
-const dataDir = path.join(__dirname, 'data');
-const imagesDir = path.join(dataDir, 'images');
-const sitesPath = path.join(dataDir, 'sites.json');
+const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
+const imagesDir = path.join(DATA_DIR, 'images');
+const sitesPath = path.join(DATA_DIR, 'sites.json');
 
 if (!fs.existsSync(sitesPath)) {
   console.error(`Missing ${sitesPath}`);
