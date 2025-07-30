@@ -7,6 +7,25 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
 
+// Ensure base data directories exist before handling uploads
+if (!fs.existsSync(DATA_DIR)) {
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+}
+const imagesBase = path.join(DATA_DIR, 'images');
+if (!fs.existsSync(imagesBase)) {
+  fs.mkdirSync(imagesBase, { recursive: true });
+}
+
+// Create default JSON files if they don't exist to prevent read errors
+const ensureFile = (file, fallback) => {
+  const full = path.join(DATA_DIR, file);
+  if (!fs.existsSync(full)) {
+    fs.writeFileSync(full, fallback);
+  }
+};
+ensureFile('sites.json', '[]');
+ensureFile('track_index.json', '[]');
+
 app.use(express.json());
 // No session or authentication required
 
@@ -19,6 +38,9 @@ function requireAuth(req, res, next) {
 
 // Serve static files
 app.use(express.static(__dirname));
+// Also expose the data directory so uploaded files are accessible when
+// DATA_DIR is outside the repository root
+app.use('/data', express.static(DATA_DIR));
 
 // Helper to read/write JSON
 const readJson = (file) => JSON.parse(fs.readFileSync(path.join(DATA_DIR, file), 'utf8'));
