@@ -24,6 +24,11 @@ app.use(express.static(__dirname));
 const readJson = (file) => JSON.parse(fs.readFileSync(path.join(DATA_DIR, file), 'utf8'));
 const writeJson = (file, data) => fs.writeFileSync(path.join(DATA_DIR, file), JSON.stringify(data, null, 2));
 
+/* ----- CONFIG ENDPOINT ----- */
+app.get('/api/data-dir', requireAuth, (req, res) => {
+  res.json({ dataDir: DATA_DIR });
+});
+
 /* ----- SITE ENDPOINTS ----- */
 app.get('/api/sites', requireAuth, (req, res) => {
   res.json(readJson('sites.json'));
@@ -83,4 +88,5 @@ app.post('/api/images/:siteId', requireAuth, imageStorage.single('image'), (req,
 
 app.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`);
+  console.log(`Using data directory: ${DATA_DIR}`);
 });

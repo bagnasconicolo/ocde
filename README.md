@@ -6,6 +6,8 @@ This repository contains the web interface and scripts for the OCDE project.
 
 The application uses a `data` folder to store uploaded tracks, images and JSON configuration files. By default the scripts expect this folder to be located at `path.join(__dirname, 'data')` relative to each script.
 
+The server exposes the path it is using via the `/api/data-dir` endpoint. The Admin Dashboard displays this value so you can confirm where files are being saved.
+
 You can override this location by defining the `DATA_DIR` environment variable when running the server or the update scripts. This allows you to keep your local data outside of the repository. For example:
 
 ```bash
