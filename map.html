@@ -179,7 +179,7 @@
           <div id="imagePopupCaption" class="prose prose-sm prose-invert mb-4"></div>
           <div class="relative">
             <button id="imagePrev" class="absolute left-0 top-1/2 -translate-y-1/2 text-3xl px-2 text-gray-300 hover:text-white">←</button>
-            <img id="imagePopupImg" class="max-h-[70vh] mx-auto rounded" src="" />
+            <img id="imagePopupImg" class="max-h-[70vh] mx-auto rounded" src="" alt="" />
             <button id="imageNext" class="absolute right-0 top-1/2 -translate-y-1/2 text-3xl px-2 text-gray-300 hover:text-white">→</button>
           </div>
         </div>
@@ -592,6 +592,7 @@
           galleryIndex = idx;
           imagePopupImg.src = images[idx];
           const cap = galleryCaptions[idx] || desc || '';
+          imagePopupImg.alt = cap;
           imagePopupCaption.innerHTML = `<h3 class='font-semibold mb-1'>${title}</h3>` + (cap ? `<p>${cap}</p>` : '');
           imagePopup.classList.remove("pointer-events-none", "opacity-0");
           imagePopup.classList.add("opacity-100");
@@ -601,6 +602,7 @@
           galleryIndex = (galleryIndex + dir + galleryImages.length) % galleryImages.length;
           imagePopupImg.src = galleryImages[galleryIndex];
           const cap = galleryCaptions[galleryIndex] || '';
+          imagePopupImg.alt = cap;
           imagePopupCaption.innerHTML = `<h3 class='font-semibold mb-1'>${galleryTitle}</h3>` + (cap ? `<p>${cap}</p>` : '');
         };
         imagePopupPrev.addEventListener("click", () => showGalleryImage(-1));
@@ -943,7 +945,7 @@
               html += `<h4>Gallery</h4><div class='flex gap-2 mt-2 overflow-x-auto border border-gray-700 rounded p-2 bg-gray-900/40'>`;
               s.images.forEach((img, i) => {
                 const cap = (s.captions || [])[i] || '';
-                html += `<img src='${img}' data-index='${i}' class='site-thumb w-16 h-16 object-cover rounded cursor-pointer' title='${cap}'/>`;
+                html += `<img src='${img}' data-index='${i}' class='site-thumb w-16 h-16 object-cover rounded cursor-pointer' title='${cap}' alt='${cap}'/>`;
               });
               html += `</div>`;
             }
@@ -964,7 +966,7 @@
                 content += `<h4>Gallery</h4><div class='flex gap-2 mt-2 overflow-x-auto border border-gray-700 rounded p-2 bg-gray-900/40'>`;
                 s.images.forEach((img, i) => {
                   const cap = (s.captions || [])[i] || '';
-                  content += `<img src='${img}' data-index='${i}' class='site-thumb w-16 h-16 object-cover rounded cursor-pointer' title='${cap}'/>`;
+                  content += `<img src='${img}' data-index='${i}' class='site-thumb w-16 h-16 object-cover rounded cursor-pointer' title='${cap}' alt='${cap}'/>`;
                 });
                 content += `</div>`;
               }

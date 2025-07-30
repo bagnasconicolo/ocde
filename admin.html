@@ -59,7 +59,10 @@
           const div = document.createElement('div');
           div.className = 'bg-gray-800 p-4 rounded space-y-2';
           const imgs = (s.images || [])
-            .map(img => `<img src="${img}" class="h-20 rounded" />`)
+            .map((img, idx) => {
+              const cap = (s.captions || [])[idx] || '';
+              return `<img src="${img}" class="h-20 rounded" alt="${cap}" />`;
+            })
             .join('');
           div.innerHTML = `
             <div class="flex items-center justify-between">
@@ -171,7 +174,7 @@
         site.images.forEach((img, i) => {
           const div = document.createElement('div');
           div.className = 'flex items-center gap-2';
-          div.innerHTML = `<img src="${img}" class="h-16 rounded" />` +
+          div.innerHTML = `<img src="${img}" class="h-16 rounded" alt="${caps[i] || ''}" />` +
             `<input data-index="${i}" class="captionInput flex-1 bg-gray-700 rounded px-2 py-1" placeholder="Caption" value="${caps[i] || ''}" />`;
           container.appendChild(div);
         });
