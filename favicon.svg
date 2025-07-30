@@ -1,9 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <circle cx="32" cy="32" r="30" fill="#f7df1e"/>
   <circle cx="32" cy="32" r="8" fill="#000"/>
-  <g fill="#000" transform="translate(32,32)">
-    <polygon points="0,-10 6,-26 -6,-26"/>
-    <polygon points="0,10 26,6 26,-6"/>
-    <polygon points="-10,0 -26,6 -26,-6"/>
+  <g fill="#000">
+    <path d="M32.0 20.0 L32.0 4.0 A28 28 0 0 1 56.2 18.0 L42.4 26.0 A12 12 0 0 0 32.0 20.0 Z"/>
+    <path d="M42.4 38.0 L56.2 46.0 A28 28 0 0 1 32.0 60.0 L32.0 44.0 A12 12 0 0 0 42.4 38.0 Z"/>
+    <path d="M21.6 38.0 L7.8 46.0 A28 28 0 0 1 7.8 18.0 L21.6 26.0 A12 12 0 0 0 21.6 38.0 Z"/>
   </g>
 </svg>
