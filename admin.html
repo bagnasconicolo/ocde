@@ -19,9 +19,15 @@
         const content = document.getElementById('content');
         content.innerHTML = `
           <h1 class="text-2xl font-semibold">Admin Dashboard</h1>
+          <p id="dataDir" class="text-sm text-gray-400"></p>
           <section id="siteSection" class="space-y-4"></section>
           <section id="trackSection" class="space-y-4"></section>
         `;
+        const resp = await fetch('/api/data-dir');
+        if (resp.ok) {
+          const { dataDir } = await resp.json();
+          document.getElementById('dataDir').textContent = `Data directory: ${dataDir}`;
+        }
         loadSites();
         loadTracks();
       }
