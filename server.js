@@ -5,7 +5,7 @@ const multer = require('multer');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const DATA_DIR = path.join(__dirname, 'data');
+const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
 
 app.use(express.json());
 // No session or authentication required
