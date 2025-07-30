@@ -29,9 +29,17 @@ sites.forEach(site => {
   }
 
   if (files.length > 0) {
-    site.images = files.map(f => `data/images/${site.id}/${f}`);
+    const newImages = files.map(f => `data/images/${site.id}/${f}`);
+    const captions = Array.isArray(site.captions) ? site.captions : [];
+    const newCaptions = newImages.map(img => {
+      const idx = Array.isArray(site.images) ? site.images.indexOf(img) : -1;
+      return idx >= 0 && captions[idx] ? captions[idx] : '';
+    });
+    site.images = newImages;
+    site.captions = newCaptions;
   } else {
     site.images = [];
+    site.captions = [];
   }
 });
 
