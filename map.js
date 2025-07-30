@@ -68,6 +68,37 @@ window.addEventListener("load", () => {
   map.on("zoomend", drawDots);
   map.on("resize", drawDots);
 
+  const infoBtn = document.createElement("button");
+  infoBtn.id = "trackInfoBtn";
+  infoBtn.textContent = "ℹ";
+  infoBtn.className = "hidden fixed z-[1100] p-1 rounded bg-black/70 text-white";
+  document.body.appendChild(infoBtn);
+  let infoTrack = null;
+  infoBtn.addEventListener("click", () => {
+    if (!infoTrack) return;
+    trackPopupContent.innerHTML = `
+      <button id='trackPopupClose' class='absolute top-2 right-2 text-gray-300 hover:text-white'>✕</button>
+      <div class='prose prose-sm prose-invert max-w-none'>
+        <h3 class='text-lg font-semibold mb-2'>${infoTrack.title}</h3>
+        <p>${infoTrack.description || ''}</p>
+      </div>`;
+    trackPopup.classList.remove("hidden");
+    document
+      .getElementById("trackPopupClose")
+      .addEventListener("click", () => trackPopup.classList.add("hidden"));
+  });
+  const showInfoBtn = (latlng, track) => {
+    infoTrack = track;
+    const pt = map.latLngToContainerPoint(latlng);
+    infoBtn.style.left = `${pt.x}px`;
+    infoBtn.style.top = `${pt.y}px`;
+    infoBtn.classList.remove("hidden");
+  };
+  const hideInfoBtn = () => {
+    infoTrack = null;
+    infoBtn.classList.add("hidden");
+  };
+
   const coordsControl = L.control({ position: "bottomright" });
   coordsControl.onAdd = function () {
     this._div = L.DomUtil.create("div", "leaflet-control-coordinate");
@@ -155,10 +186,15 @@ window.addEventListener("load", () => {
     try {
       const res = await fetch("data/track_index.json");
       if (!res.ok) throw new Error();
-      return await res.json();
+      const data = await res.json();
+      return Array.isArray(data)
+        ? data.map((t) =>
+            typeof t === "string" ? { file: t, title: "", description: "" } : t
+          )
+        : [];
     } catch {
       console.warn("track_index.json missing → fallback list");
-      return FALLBACK_TRACK_FILES;
+      return FALLBACK_TRACK_FILES.map((f) => ({ file: f, title: "", description: "" }));
     }
   };
 
@@ -355,6 +391,9 @@ window.addEventListener("load", () => {
           fillOpacity: dotOpacity,
           className: "track-marker",
         });
+        m.on("mouseover", (e) => showInfoBtn(e.latlng, t));
+        m.on("mousemove", (e) => showInfoBtn(e.latlng, t));
+        m.on("mouseout", hideInfoBtn);
         t.markerGroup.addLayer(m);
       });
       trackDotLayer.addLayer(t.markerGroup);
@@ -383,11 +422,15 @@ window.addEventListener("load", () => {
     const files = await fetchTrackList();
     const bounds = [];
 
-    for (const fname of files) {
+    for (const item of files) {
+      const fname = item.file || item;
       try {
         const res = await fetch(fname);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const pts = parseFile(await res.text());
+        const { points: pts, title: fileTitle } = parseFile(await res.text());
+        const metaTitle = item.title || '';
+        const description = item.description || '';
+        const title = metaTitle || fileTitle || fname.split("/").pop();
         if (!pts.length) throw new Error("no data");
         pts.sort((a, b) => a.date - b.date);
 
@@ -425,7 +468,7 @@ window.addEventListener("load", () => {
         swatch.style.background = color;
         label.appendChild(checkbox);
         label.appendChild(swatch);
-        label.appendChild(document.createTextNode(" " + fname.split("/").pop()));
+        label.appendChild(document.createTextNode(" " + title));
         li.appendChild(label);
         trackListElem.appendChild(li);
 
@@ -433,6 +476,8 @@ window.addEventListener("load", () => {
           points: pts,
           line,
           visible: true,
+          title,
+          description,
           hue,
           swatch,
           markerGroup: null,
@@ -450,6 +495,10 @@ window.addEventListener("load", () => {
         const histDoseId = `hist-dose-${uid}`;
         const sliderDoseId = `slider-dose-${uid}`;
 
+        line.on("mouseover", (e) => showInfoBtn(e.latlng, tracks[fname]));
+        line.on("mousemove", (e) => showInfoBtn(e.latlng, tracks[fname]));
+        line.on("mouseout", hideInfoBtn);
+
         line.on("click", () => {
           let filtered = filterByDate(pts);
           if (!filtered.length) filtered = pts;
@@ -457,7 +506,7 @@ window.addEventListener("load", () => {
           trackPopupContent.innerHTML = `
             <button id='trackPopupClose' class='absolute top-2 right-2 text-gray-300 hover:text-white'>✕</button>
             <div class='prose prose-sm prose-invert max-w-none mb-4'>
-              <h3 class='text-lg font-semibold'>${fname.split("/").pop()}</h3>
+              <h3 class='text-lg font-semibold'>${tracks[fname].title}</h3>
             </div>
             <div class='grid grid-cols-3 gap-2 sm:gap-4 mb-4 text-center text-xs sm:text-sm'>
               <div class='glass-panel p-2 rounded-lg'>
