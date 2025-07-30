@@ -108,6 +108,27 @@ app.post('/api/images/:siteId', requireAuth, imageStorage.single('image'), (req,
   res.json({ ok: true, file: `data/images/${siteId}/${path.basename(dest)}` });
 });
 
+app.delete('/api/images/:siteId/:imageName', requireAuth, (req, res) => {
+  const { siteId, imageName } = req.params;
+  const filename = path.basename(imageName);
+  const filePath = path.join(DATA_DIR, 'images', siteId, filename);
+  if (fs.existsSync(filePath)) {
+    fs.unlinkSync(filePath);
+  }
+  const sites = readJson('sites.json');
+  const site = sites.find((s) => s.id === siteId);
+  if (site && Array.isArray(site.images)) {
+    const rel = `data/images/${siteId}/${filename}`;
+    const idx = site.images.indexOf(rel);
+    if (idx >= 0) {
+      site.images.splice(idx, 1);
+      if (Array.isArray(site.captions)) site.captions.splice(idx, 1);
+      writeJson('sites.json', sites);
+    }
+  }
+  res.json({ ok: true });
+});
+
 app.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`);
   console.log(`Using data directory: ${DATA_DIR}`);
