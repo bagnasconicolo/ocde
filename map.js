@@ -42,6 +42,14 @@ window.addEventListener("load", () => {
       "https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png",
       { maxZoom: 20, attribution: "&copy; OpenStreetMap contributors, HOT" }
     ),
+    satellite: L.tileLayer(
+      "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+      {
+        maxZoom: 19,
+        attribution:
+          "Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community",
+      }
+    ),
   };
   let currentBase = baseLayers.dark.addTo(map);
   let baseIsDark = true;
@@ -70,6 +78,14 @@ window.addEventListener("load", () => {
   map.on("mousemove", (e) => {
     coordsControl._div.innerHTML = `Lat: ${e.latlng.lat.toFixed(5)} Lon: ${e.latlng.lng.toFixed(5)}`;
   });
+
+  const northControl = L.control({ position: "topright" });
+  northControl.onAdd = function () {
+    this._div = L.DomUtil.create("div", "north-indicator");
+    this._div.innerHTML = "\u25B2 N"; // ▲ N
+    return this._div;
+  };
+  northControl.addTo(map);
 
   /* ------------------ STATE ------------------ */
   const allPoints = [];
