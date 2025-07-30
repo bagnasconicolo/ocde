@@ -68,35 +68,14 @@ window.addEventListener("load", () => {
   map.on("zoomend", drawDots);
   map.on("resize", drawDots);
 
-  const infoBtn = document.createElement("button");
-  infoBtn.id = "trackInfoBtn";
-  infoBtn.textContent = "ℹ";
-  infoBtn.className = "hidden fixed z-[1100] p-1 rounded bg-black/70 text-white";
-  document.body.appendChild(infoBtn);
-  let infoTrack = null;
-  infoBtn.addEventListener("click", () => {
-    if (!infoTrack) return;
-    trackPopupContent.innerHTML = `
-      <button id='trackPopupClose' class='absolute top-2 right-2 text-gray-300 hover:text-white'>✕</button>
-      <div class='prose prose-sm prose-invert max-w-none'>
-        <h3 class='text-lg font-semibold mb-2'>${infoTrack.title}</h3>
-        <p>${infoTrack.description || ''}</p>
-      </div>`;
-    trackPopup.classList.remove("hidden");
-    document
-      .getElementById("trackPopupClose")
-      .addEventListener("click", () => trackPopup.classList.add("hidden"));
-  });
-  const showInfoBtn = (latlng, track) => {
-    infoTrack = track;
-    const pt = map.latLngToContainerPoint(latlng);
-    infoBtn.style.left = `${pt.x}px`;
-    infoBtn.style.top = `${pt.y}px`;
-    infoBtn.classList.remove("hidden");
+  const trackInfo = document.getElementById("trackInfo");
+  const showTrackInfo = (track) => {
+    if (!track) return;
+    trackInfo.innerHTML = `<div class='font-semibold mb-1'>${track.title}</div><div>${track.description || ''}</div>`;
+    trackInfo.classList.remove("hidden");
   };
-  const hideInfoBtn = () => {
-    infoTrack = null;
-    infoBtn.classList.add("hidden");
+  const hideTrackInfo = () => {
+    trackInfo.classList.add("hidden");
   };
 
   const coordsControl = L.control({ position: "bottomright" });
@@ -391,9 +370,9 @@ window.addEventListener("load", () => {
           fillOpacity: dotOpacity,
           className: "track-marker",
         });
-        m.on("mouseover", (e) => showInfoBtn(e.latlng, t));
-        m.on("mousemove", (e) => showInfoBtn(e.latlng, t));
-        m.on("mouseout", hideInfoBtn);
+        m.on("mouseover", () => showTrackInfo(t));
+        m.on("mousemove", () => showTrackInfo(t));
+        m.on("mouseout", hideTrackInfo);
         t.markerGroup.addLayer(m);
       });
       trackDotLayer.addLayer(t.markerGroup);
@@ -495,9 +474,9 @@ window.addEventListener("load", () => {
         const histDoseId = `hist-dose-${uid}`;
         const sliderDoseId = `slider-dose-${uid}`;
 
-        line.on("mouseover", (e) => showInfoBtn(e.latlng, tracks[fname]));
-        line.on("mousemove", (e) => showInfoBtn(e.latlng, tracks[fname]));
-        line.on("mouseout", hideInfoBtn);
+        line.on("mouseover", () => showTrackInfo(tracks[fname]));
+        line.on("mousemove", () => showTrackInfo(tracks[fname]));
+        line.on("mouseout", hideTrackInfo);
 
         line.on("click", () => {
           let filtered = filterByDate(pts);
