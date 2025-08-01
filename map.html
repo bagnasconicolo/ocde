@@ -947,7 +947,7 @@
 
         const fetchSites = async () => {
           try {
-            const res = await fetch("data/sites.json");
+            const res = await fetch("data/sites.json", { cache: "no-store" });
             if (!res.ok) throw new Error();
             return await res.json();
           } catch {
