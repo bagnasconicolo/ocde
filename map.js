@@ -163,7 +163,7 @@ window.addEventListener("load", () => {
   /* ------------------ HELPERS ------------------ */
   const fetchTrackList = async () => {
     try {
-      const res = await fetch("data/track_index.json", { cache: "no-store" });
+      const res = await fetch("/api/tracks", { cache: "no-store" });
       if (!res.ok) throw new Error();
       const data = await res.json();
       return Array.isArray(data)
