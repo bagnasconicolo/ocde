@@ -67,7 +67,7 @@
         const form = document.getElementById("siteForm");
         const output = document.getElementById("jsonOutput");
         let sites = [];
-        fetch("data/sites.json")
+        fetch("/api/sites")
           .then(r => r.json())
           .then(d => {
             sites = d;

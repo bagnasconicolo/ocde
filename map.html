@@ -650,7 +650,7 @@
         /* ------------------ HELPERS ------------------ */
         const fetchTrackList = async () => {
           try {
-            const res = await fetch("data/track_index.json");
+            const res = await fetch("/api/tracks", { cache: "no-store" });
             if (!res.ok) throw new Error();
             const data = await res.json();
             return Array.isArray(data)
@@ -947,7 +947,7 @@
 
         const fetchSites = async () => {
           try {
-            const res = await fetch("data/sites.json", { cache: "no-store" });
+            const res = await fetch("/api/sites", { cache: "no-store" });
             if (!res.ok) throw new Error();
             return await res.json();
           } catch {
