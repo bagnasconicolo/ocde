@@ -126,6 +126,8 @@ window.addEventListener("load", () => {
   const lineShadowSlider = document.getElementById("lineShadowSlider");
   const showTrackDotsToggle = document.getElementById("showTrackDotsToggle");
   const dotOpacitySlider = document.getElementById("dotOpacitySlider");
+  const colormapSelect = document.getElementById("colormapSelect");
+  const globalColorToggle = document.getElementById("globalColorToggle");
   const trackPopup = document.getElementById("trackPopup");
   const trackPopupContent = document.getElementById("trackPopupContent");
   document
@@ -142,6 +144,8 @@ window.addEventListener("load", () => {
   let lineShadow = 2;
   let showTrackDots = false;
   let dotOpacity = 0.5;
+  let globalScale = false;
+  let colorMap = 'rainbow';
   
   document
     .getElementById("toggleSidebar")
@@ -213,19 +217,75 @@ window.addEventListener("load", () => {
       .filter((p) => !isNaN(p.lat) && !isNaN(p.lon));
   };
 
+  const ramp = (colors, t) => {
+    t = Math.max(0, Math.min(1, t));
+    const n = colors.length - 1;
+    const i = Math.floor(t * n);
+    const f = t * n - i;
+    const c1 = colors[i];
+    const c2 = colors[Math.min(i + 1, n)];
+    const r = Math.round(c1[0] + f * (c2[0] - c1[0]));
+    const g = Math.round(c1[1] + f * (c2[1] - c1[1]));
+    const b = Math.round(c1[2] + f * (c2[2] - c1[2]));
+    return `rgb(${r},${g},${b})`;
+  };
+
+  const colorMaps = {
+    rainbow: (t) => ramp([
+      [0, 96, 0],
+      [255, 255, 0],
+      [255, 0, 0],
+    ], t),
+    viridis: (t) =>
+      ramp(
+        [
+          [68, 1, 84],
+          [59, 82, 139],
+          [33, 145, 140],
+          [94, 201, 97],
+          [253, 231, 37],
+        ],
+        t
+      ),
+    plasma: (t) =>
+      ramp(
+        [
+          [13, 8, 135],
+          [126, 3, 168],
+          [203, 71, 119],
+          [248, 149, 64],
+          [253, 231, 37],
+        ],
+        t
+      ),
+    magma: (t) =>
+      ramp(
+        [
+          [0, 0, 4],
+          [59, 15, 113],
+          [133, 28, 107],
+          [208, 59, 73],
+          [251, 253, 191],
+        ],
+        t
+      ),
+    turbo: (t) =>
+      ramp(
+        [
+          [48, 18, 59],
+          [37, 112, 219],
+          [0, 218, 115],
+          [255, 230, 32],
+          [250, 37, 0],
+        ],
+        t
+      ),
+  };
+
   const colorScale = (val, min, max) => {
-    if (val === 0) return "#777"; // zero measurements grey
+    if (val === 0) return "#777";
     const t = Math.max(0, Math.min(1, (val - min) / (max - min || 1e-9)));
-    let r, g;
-    const darkG = 60; // even darker starting green
-    if (t <= 0.5) {
-      r = Math.round(t * 2 * 255); // dark green -> yellow
-      g = Math.round(darkG + t * 2 * (255 - darkG));
-    } else {
-      r = 255;
-      g = Math.round(255 * (1 - (t - 0.5) * 2)); // yellow -> red
-    }
-    return `rgb(${r},${g},0)`;
+    return colorMaps[colorMap](t);
   };
 
   const animateCounter = (el, value, decimals = 0) => {
@@ -342,20 +402,44 @@ window.addEventListener("load", () => {
 
     const metric = document.getElementById("metricSelect").value;
     const visibleTracks = Object.values(tracks).filter((t) => t.visible);
-    const visiblePoints = visibleTracks.flatMap((t) => filterByDate(t.points));
-    if (!visiblePoints.length) return;
-    const vals = visiblePoints
-      .filter((p) => p.dose !== 0 || p.cps !== 0)
-      .map((p) => (metric === "dose" ? p.dose : p.cps));
-    const min = Math.min(...vals);
-    const max = Math.max(...vals);
+    if (!visibleTracks.length) return;
+
+    let gMin = Infinity;
+    let gMax = -Infinity;
+    if (globalScale) {
+      const allVals = visibleTracks
+        .flatMap((t) => filterByDate(t.points))
+        .filter((p) => p.dose !== 0 || p.cps !== 0)
+        .map((p) => (metric === "dose" ? p.dose : p.cps));
+      if (allVals.length) {
+        gMin = Math.min(...allVals);
+        gMax = Math.max(...allVals);
+      } else {
+        gMin = gMax = 0;
+      }
+    }
 
     trackDotLayer.addTo(map);
     visibleTracks.forEach((t) => {
       if (!t.markerGroup) t.markerGroup = L.layerGroup();
       else t.markerGroup.clearLayers();
 
-      filterByDate(t.points).forEach((p) => {
+      const pts = filterByDate(t.points);
+      let min = gMin;
+      let max = gMax;
+      if (!globalScale) {
+        const vals = pts
+          .filter((p) => p.dose !== 0 || p.cps !== 0)
+          .map((p) => (metric === "dose" ? p.dose : p.cps));
+        if (vals.length) {
+          min = Math.min(...vals);
+          max = Math.max(...vals);
+        } else {
+          min = max = 0;
+        }
+      }
+
+      pts.forEach((p) => {
         const valMetric = metric === "dose" ? p.dose : p.cps;
         const color =
           p.dose === 0 && p.cps === 0
@@ -916,6 +1000,15 @@ window.addEventListener("load", () => {
       dotOpacity = v;
       updateLineStyles();
     }
+  });
+  colormapSelect.addEventListener("change", (e) => {
+    colorMap = e.target.value;
+    drawDots();
+    renderTrackDots();
+  });
+  globalColorToggle.addEventListener("change", (e) => {
+    globalScale = e.target.checked;
+    renderTrackDots();
   });
   showTrackDotsToggle.addEventListener("change", (e) => {
     showTrackDots = e.target.checked;
