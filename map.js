@@ -904,13 +904,24 @@ window.addEventListener("load", () => {
       return;
     }
     const points = aggregatePoints(visiblePoints);
-    const filteredVals = points.filter(
-      (p) => p.dose !== 0 || p.cps !== 0
-    );
-    const sample = filteredVals.length ? filteredVals : points;
-    const vals = sample.map((p) => (metric === "dose" ? p.dose : p.cps));
-    const min = Math.min(...vals);
-    const max = Math.max(...vals);
+    let min, max;
+    if (globalScale) {
+      const vals = visiblePoints
+        .filter((p) => p.dose !== 0 || p.cps !== 0)
+        .map((p) => (metric === "dose" ? p.dose : p.cps));
+      if (vals.length) {
+        min = Math.min(...vals);
+        max = Math.max(...vals);
+      } else {
+        min = max = 0;
+      }
+    } else {
+      const filteredVals = points.filter((p) => p.dose !== 0 || p.cps !== 0);
+      const sample = filteredVals.length ? filteredVals : points;
+      const vals = sample.map((p) => (metric === "dose" ? p.dose : p.cps));
+      min = Math.min(...vals);
+      max = Math.max(...vals);
+    }
 
     const legendLabel = document.getElementById("legend-label");
     const legendBar = document.getElementById("legend-bar");
@@ -1078,6 +1089,7 @@ window.addEventListener("load", () => {
   globalColorToggle.addEventListener("change", (e) => {
     globalScale = e.target.checked;
     renderTrackDots();
+    drawDots();
   });
   showTrackDotsToggle.addEventListener("change", (e) => {
     showTrackDots = e.target.checked;
