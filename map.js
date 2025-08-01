@@ -743,6 +743,8 @@ window.addEventListener("load", () => {
     const visiblePoints = filterByDate(allPoints).filter(
       (p) => tracks[p.fname]?.visible
     );
+    const visibleTrackArr = Object.values(tracks).filter((t) => t.visible);
+    const singleTrack = visibleTrackArr.length === 1 ? visibleTrackArr[0] : null;
     if (!visiblePoints.length) {
       pointLayer.clearLayers();
       legend.classList.add("hidden");
@@ -819,8 +821,17 @@ window.addEventListener("load", () => {
         `</div>`;
       popupHtml += `</div>`;
       marker.bindPopup(popupHtml);
-      marker.on("mouseover", () => marker.openPopup());
-      marker.on("mouseout", () => marker.closePopup());
+      marker.on("mouseover", () => {
+        marker.openPopup();
+        if (singleTrack) showTrackInfo(singleTrack);
+      });
+      marker.on("mousemove", () => {
+        if (singleTrack) showTrackInfo(singleTrack);
+      });
+      marker.on("mouseout", () => {
+        marker.closePopup();
+        if (singleTrack) hideTrackInfo();
+      });
     });
   }
 
