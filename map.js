@@ -221,12 +221,59 @@ window.addEventListener("load", () => {
       }
     } catch (_) {}
 
-    // CSV fallback (lat lon dose cps energy?)
-    const parsed = Papa.parse(text.trim(), {
+    // CSV/TSV fallback - try to detect headers or common column order
+    let parsed = Papa.parse(text.trim(), {
+      header: true,
       dynamicTyping: true,
       skipEmptyLines: true,
     });
-    return parsed.data
+    if (parsed.meta.fields && parsed.meta.fields.length > 0) {
+      const f = parsed.meta.fields.map((h) => h.toLowerCase());
+      const latIdx = f.findIndex((v) => v.startsWith('lat'));
+      const lonIdx = f.findIndex((v) => v.startsWith('lon'));
+      const doseIdx = f.findIndex((v) => v.includes('dose'));
+      const cpsIdx = f.findIndex((v) => v.includes('count'));
+      const dateIdx = f.findIndex((v) => v.startsWith('time') || v.includes('stamp') || v === 'date');
+      if (latIdx >= 0 && lonIdx >= 0) {
+        return parsed.data
+          .map((row) => ({
+            lat: +row[parsed.meta.fields[latIdx]],
+            lon: +row[parsed.meta.fields[lonIdx]],
+            dose: +(row[parsed.meta.fields[doseIdx]] ?? 0),
+            cps: +(row[parsed.meta.fields[cpsIdx]] ?? 0),
+            energy: +row.energy || +row.energy_ev || NaN,
+            date: +(row[parsed.meta.fields[dateIdx]] ?? 0),
+          }))
+          .filter((p) => !isNaN(p.lat) && !isNaN(p.lon));
+      }
+    }
+
+    // Retry without headers and guess common RC format
+    parsed = Papa.parse(text.trim(), {
+      dynamicTyping: true,
+      skipEmptyLines: true,
+    });
+    const rows = parsed.data;
+    if (rows.length && rows[0][0] && typeof rows[0][0] === 'string' && rows[0][0].startsWith('Track')) {
+      rows.shift();
+    }
+    if (rows.length && rows[0].length >= 7 && isNaN(rows[0][0])) {
+      rows.shift();
+    }
+    if (rows.length && rows[0].length >= 7) {
+      return rows
+        .map((r) => ({
+          lat: +r[2],
+          lon: +r[3],
+          dose: +r[5],
+          cps: +r[6],
+          energy: +r[7] || NaN,
+          date: +r[0] || 0,
+        }))
+        .filter((p) => !isNaN(p.lat) && !isNaN(p.lon));
+    }
+
+    return rows
       .filter((r) => r.length >= 4)
       .map((r) => ({
         lat: +r[0],
