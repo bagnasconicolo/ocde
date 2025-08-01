@@ -668,12 +668,13 @@
         };
 
         const parseFile = (text) => {
-          // .rctrk JSON
+          // .rctrk JSON (object with markers or plain array)
           try {
             const js = JSON.parse(text);
-            if (Array.isArray(js.markers)) {
+            const markers = Array.isArray(js) ? js : js.markers;
+            if (Array.isArray(markers)) {
               const factor = js.sv === false ? 0.01 : 1;
-              const points = js.markers
+              const points = markers
                 .map((m) => ({
                   lat: +m.lat,
                   lon: +m.lon,
@@ -686,6 +687,28 @@
               return { points, title: js.title };
             }
           } catch (_) {}
+
+          // Newline-delimited JSON
+          try {
+            const lines = text.trim().split(/\r?\n/);
+            if (lines.length > 1) {
+              const objs = lines.map((l) => JSON.parse(l));
+              if (objs.every((o) => typeof o === "object")) {
+                const points = objs
+                  .map((m) => ({
+                    lat: +m.lat,
+                    lon: +m.lon,
+                    dose: +(m.doseRate ?? m.dose_uSv_h ?? m.dose ?? 0),
+                    cps: +(m.countRate ?? m.cps ?? 0),
+                    energy: +(m.energy ?? m.energyValue ?? m.energy_ev ?? NaN),
+                    date: +m.date || 0,
+                  }))
+                  .filter((p) => !isNaN(p.lat) && !isNaN(p.lon));
+                return { points };
+              }
+            }
+          } catch (_) {}
+
           // CSV fallback (lat lon dose cps energy?)
           const parsed = Papa.parse(text.trim(), {
             dynamicTyping: true,
