@@ -575,12 +575,13 @@
         const siteLayer = L.layerGroup().addTo(map);
         const trackListElem = document.getElementById("trackList");
         const siteListElem = document.getElementById("siteList");
-        const siteIcon = L.divIcon({
-          html: "🏠",
-          className: "site-icon",
-          iconSize: [24, 24],
-          iconAnchor: [12, 12],
-        });
+          const makeSiteIcon = (icon) =>
+            L.divIcon({
+              html: icon,
+              className: "site-icon",
+              iconSize: [24, 24],
+              iconAnchor: [12, 12],
+            });
         const siteMarkers = {};
         const sidebar = document.getElementById("sidebar");
         const trackViewToggle = document.getElementById("trackViewToggle");
@@ -1116,8 +1117,8 @@
           const sites = await fetchSites();
           sites.forEach((s) => {
             if (isNaN(s.lat) || isNaN(s.lon)) return;
-            const id = s.id || `${s.lat},${s.lon}`;
-            const m = L.marker([s.lat, s.lon], { icon: siteIcon }).addTo(siteLayer);
+              const id = s.id || `${s.lat},${s.lon}`;
+              const m = L.marker([s.lat, s.lon], { icon: makeSiteIcon(s.icon || '🏠') }).addTo(siteLayer);
             siteMarkers[id] = m;
             let html = `<div class='prose prose-sm prose-invert'><h3 class='font-semibold mb-1'>${s.title ?? ""}</h3>`;
             if (s.description) html += `<h4>Description</h4><p>${s.description}</p>`;
@@ -1187,11 +1188,14 @@
             checkbox.className = "siteCheck accent-blue-500";
             checkbox.dataset.id = id;
             checkbox.checked = true;
-            const labelElem = document.createElement("label");
-            labelElem.className = "flex items-center gap-2 text-gray-200";
-            labelElem.appendChild(checkbox);
-            labelElem.appendChild(document.createTextNode(" " + (s.title || id)));
-            li.appendChild(labelElem);
+              const labelElem = document.createElement("label");
+              labelElem.className = "flex items-center gap-2 text-gray-200";
+              labelElem.appendChild(checkbox);
+              const iconSpan = document.createElement("span");
+              iconSpan.textContent = s.icon || "🏠";
+              labelElem.appendChild(iconSpan);
+              labelElem.appendChild(document.createTextNode(" " + (s.title || id)));
+              li.appendChild(labelElem);
             const btn = document.createElement("button");
             btn.type = "button";
             btn.textContent = "↦";

@@ -42,6 +42,7 @@
           <form id="siteForm" class="bg-gray-800 p-4 rounded space-y-2">
             <input id="siteId" placeholder="ID" class="w-full bg-gray-700 rounded px-2 py-1" required />
             <input id="title" placeholder="Title" class="w-full bg-gray-700 rounded px-2 py-1" required />
+            <input id="icon" placeholder="Icon (emoji)" value="🏠" class="w-full bg-gray-700 rounded px-2 py-1" />
             <div class="grid grid-cols-2 gap-2">
               <input id="lat" type="number" step="any" placeholder="Lat" class="bg-gray-700 rounded px-2 py-1" required />
               <input id="lon" type="number" step="any" placeholder="Lon" class="bg-gray-700 rounded px-2 py-1" required />
@@ -71,7 +72,7 @@
           .join('');
           div.innerHTML = `
             <div class="flex items-center justify-between">
-              <span>${s.id} - ${s.title}</span>
+              <span>${(s.icon || '🏠')} ${s.id} - ${s.title}</span>
               <div class="space-x-2"><button data-id="${s.id}" class="editSite bg-blue-600 hover:bg-blue-500 px-2 py-1 rounded text-sm">Edit</button> <button data-id="${s.id}" class="deleteSite bg-red-600 hover:bg-red-500 px-2 py-1 rounded">Delete</button></div>
             </div>
             <div class="flex flex-wrap gap-2">${imgs}</div>
@@ -131,16 +132,17 @@
         sec.querySelector('#siteForm').addEventListener('submit', async e => {
           e.preventDefault();
           const f = e.target;
-          const site = {
-            id: f.siteId.value.trim(),
-            title: f.title.value.trim(),
-            lat: +f.lat.value,
-            lon: +f.lon.value,
-            description: f.description.value.trim(),
-            images: editingSite && editingSite.images ? editingSite.images : [],
-            captions: Array.from(document.querySelectorAll('#imageCaptions .captionInput')).map(i => i.value.trim()),
-            references: f.references.value.split(',').map(s=>s.trim()).filter(Boolean)
-          };
+            const site = {
+              id: f.siteId.value.trim(),
+              title: f.title.value.trim(),
+              icon: f.icon.value.trim() || '🏠',
+              lat: +f.lat.value,
+              lon: +f.lon.value,
+              description: f.description.value.trim(),
+              images: editingSite && editingSite.images ? editingSite.images : [],
+              captions: Array.from(document.querySelectorAll('#imageCaptions .captionInput')).map(i => i.value.trim()),
+              references: f.references.value.split(',').map(s=>s.trim()).filter(Boolean)
+            };
           await fetch('/api/sites', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -157,11 +159,12 @@
         const f = document.getElementById('siteForm');
         f.siteId.value = site.id;
         f.siteId.disabled = true;
-        f.title.value = site.title;
-        f.lat.value = site.lat;
-        f.lon.value = site.lon;
-        f.description.value = site.description || '';
-        f.references.value = (site.references || []).join(', ');
+          f.title.value = site.title;
+          f.icon.value = site.icon || '🏠';
+          f.lat.value = site.lat;
+          f.lon.value = site.lon;
+          f.description.value = site.description || '';
+          f.references.value = (site.references || []).join(', ');
         renderCaptions(site);
         document.getElementById('siteFormSave').textContent = 'Update';
         document.getElementById('siteFormCancel').classList.remove('hidden');
