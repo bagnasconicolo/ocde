@@ -924,8 +924,9 @@ window.addEventListener("load", () => {
       points = points.map((p) => ({ ...p, _min: min, _max: max }));
     } else {
       visibleTrackArr.forEach((t) => {
-        const pts = aggregatePoints(filterByDate(t.points));
-        const vals = pts
+        const raw = filterByDate(t.points);
+        const pts = aggregatePoints(raw);
+        const vals = raw
           .filter((p) => p.dose !== 0 || p.cps !== 0)
           .map((p) => (metric === "dose" ? p.dose : p.cps));
         let tMin, tMax;
