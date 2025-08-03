@@ -731,22 +731,50 @@
             }
           } catch (_) {}
 
-          // CSV fallback (lat lon dose cps energy?)
+          // CSV/TSV fallback
+          const delimiter = text.includes("\t") ? "\t" : ",";
           const parsed = Papa.parse(text.trim(), {
+            delimiter,
             dynamicTyping: true,
             skipEmptyLines: true,
           });
-          const points = parsed.data
-            .filter((r) => r.length >= 4)
-            .map((r) => ({
-              lat: +r[0],
-              lon: +r[1],
-              dose: +r[2],
-              cps: +r[3],
-              energy: +r[4] || NaN,
-              date: 0,
-            }))
-            .filter((p) => !isNaN(p.lat) && !isNaN(p.lon));
+
+          let points;
+          if (parsed.data[0] && parsed.data[0].length > 6) {
+            // RCTRK-style: timestamp, time, lat, lon, accuracy, dose, cps, ...
+            points = parsed.data
+              .filter((r) => r.length >= 7)
+              .map((r) => {
+                const lat = +r[2];
+                const lon = +r[3];
+                const dose = +r[5];
+                const cps = +r[6];
+                let date = 0;
+                const ts = Number(r[0]);
+                if (!isNaN(ts) && ts > 1e12) {
+                  date = ts / 1e9; // nanoseconds -> seconds
+                } else if (r[1]) {
+                  const t = Date.parse(String(r[1]).replace(" ", "T") + "Z");
+                  if (!isNaN(t)) date = t / 1000;
+                }
+                return { lat, lon, dose, cps, energy: NaN, date };
+              })
+              .filter((p) => !isNaN(p.lat) && !isNaN(p.lon));
+          } else {
+            // generic CSV: lat, lon, dose, cps, [energy]
+            points = parsed.data
+              .filter((r) => r.length >= 4)
+              .map((r) => ({
+                lat: +r[0],
+                lon: +r[1],
+                dose: +r[2],
+                cps: +r[3],
+                energy: +r[4] || NaN,
+                date: 0,
+              }))
+              .filter((p) => !isNaN(p.lat) && !isNaN(p.lon));
+          }
+
           return { points };
         };
 
