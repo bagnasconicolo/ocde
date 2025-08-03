@@ -893,19 +893,25 @@ window.addEventListener("load", () => {
       return;
     }
     const metric = document.getElementById("metricSelect").value;
-    const visiblePoints = filterByDate(allPoints).filter(
-      (p) => tracks[p.fname]?.visible
-    );
     const visibleTrackArr = Object.values(tracks).filter((t) => t.visible);
     const singleTrack = visibleTrackArr.length === 1 ? visibleTrackArr[0] : null;
-    if (!visiblePoints.length) {
+    if (!visibleTrackArr.length) {
       pointLayer.clearLayers();
       legend.classList.add("hidden");
       return;
     }
-    const points = aggregatePoints(visiblePoints);
+    let points = [];
     let min, max;
     if (globalScale) {
+      const visiblePoints = filterByDate(allPoints).filter(
+        (p) => tracks[p.fname]?.visible
+      );
+      if (!visiblePoints.length) {
+        pointLayer.clearLayers();
+        legend.classList.add("hidden");
+        return;
+      }
+      points = aggregatePoints(visiblePoints);
       const vals = visiblePoints
         .filter((p) => p.dose !== 0 || p.cps !== 0)
         .map((p) => (metric === "dose" ? p.dose : p.cps));
@@ -915,34 +921,61 @@ window.addEventListener("load", () => {
       } else {
         min = max = 0;
       }
+      points = points.map((p) => ({ ...p, _min: min, _max: max }));
     } else {
-      const filteredVals = points.filter((p) => p.dose !== 0 || p.cps !== 0);
-      const sample = filteredVals.length ? filteredVals : points;
-      const vals = sample.map((p) => (metric === "dose" ? p.dose : p.cps));
-      min = Math.min(...vals);
-      max = Math.max(...vals);
+      visibleTrackArr.forEach((t) => {
+        const raw = filterByDate(t.points);
+        const vals = raw
+          .filter((p) => p.dose !== 0 || p.cps !== 0)
+          .map((p) => (metric === "dose" ? p.dose : p.cps));
+        let tMin, tMax;
+        if (vals.length) {
+          tMin = Math.min(...vals);
+          tMax = Math.max(...vals);
+        } else {
+          tMin = tMax = 0;
+        }
+        const pts = aggregatePoints(raw);
+        points.push(...pts.map((p) => ({ ...p, _min: tMin, _max: tMax })));
+        if (singleTrack === t) {
+          min = tMin;
+          max = tMax;
+        }
+      });
+    }
+    if (!points.length) {
+      pointLayer.clearLayers();
+      legend.classList.add("hidden");
+      return;
     }
 
-    const legendLabel = document.getElementById("legend-label");
-    const legendBar = document.getElementById("legend-bar");
-    const legendMin = document.getElementById("legend-min");
-    const legendMax = document.getElementById("legend-max");
-    const decimals = metric === "dose" ? 3 : 1;
-    legendLabel.textContent =
-      metric === "dose" ? "Dose (µSv/h)" : "Rate (cps)";
-    legendMin.textContent = min.toFixed(decimals);
-    legendMax.textContent = max.toFixed(decimals);
-    const cMin = colorScale(min, min, max);
-    const cMid = colorScale((min + max) / 2, min, max);
-    const cMax = colorScale(max, min, max);
-    legendBar.style.background = `linear-gradient(to right, ${cMin}, ${cMid}, ${cMax})`;
-    legend.classList.remove("hidden");
+    if (globalScale || singleTrack) {
+      const legendLabel = document.getElementById("legend-label");
+      const legendBar = document.getElementById("legend-bar");
+      const legendMin = document.getElementById("legend-min");
+      const legendMax = document.getElementById("legend-max");
+      const decimals = metric === "dose" ? 3 : 1;
+      legendLabel.textContent =
+        metric === "dose" ? "Dose (µSv/h)" : "Rate (cps)";
+      legendMin.textContent = min.toFixed(decimals);
+      legendMax.textContent = max.toFixed(decimals);
+      const cMin = colorScale(min, min, max);
+      const cMid = colorScale((min + max) / 2, min, max);
+      const cMax = colorScale(max, min, max);
+      legendBar.style.background = `linear-gradient(to right, ${cMin}, ${cMid}, ${cMax})`;
+      legend.classList.remove("hidden");
+    } else {
+      legend.classList.add("hidden");
+    }
 
     pointLayer.clearLayers();
     const radius = 4 + map.getZoom() / 2;
     points.forEach((p) => {
       const valMetric = metric === "dose" ? p.dose : p.cps;
-      const color = p.dose === 0 && p.cps === 0 ? "#777" : colorScale(valMetric, min, max);
+      const color =
+        p.dose === 0 && p.cps === 0
+          ? "#777"
+          : colorScale(valMetric, p._min, p._max);
       const marker = L.circleMarker([p.lat, p.lon], {
         radius,
         renderer: map.getRenderer(map),
