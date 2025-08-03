@@ -739,12 +739,12 @@
             skipEmptyLines: true,
           });
 
+          const rows = parsed.data.filter((r) => r.length >= 7);
+
           let points;
-          if (parsed.data[0] && parsed.data[0].length > 6) {
+          if (rows[0] && rows[0].length > 6) {
             // RCTRK-style: timestamp, time, lat, lon, accuracy, dose, cps, ...
-            points = parsed.data
-              .filter((r) => r.length >= 7)
-              .map((r) => {
+            points = rows.map((r) => {
                 const lat = +r[2];
                 const lon = +r[3];
                 const dose = +r[5];
