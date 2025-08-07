@@ -6,7 +6,7 @@ const FALLBACK_TRACK_FILES = [
 window.addEventListener("load", () => {
   const styleElem = document.createElement("style");
   styleElem.textContent =
-    `.track-line, .glass-dot { filter: drop-shadow(0 0 2px #000); }\n#trackPopup { backdrop-filter: blur(8px) saturate(150%); -webkit-backdrop-filter: blur(8px) saturate(150%); }`;
+    `.track-line, .glass-dot, .track-marker { filter: drop-shadow(0 0 3px #000); }\n#trackPopup { backdrop-filter: blur(8px) saturate(150%); -webkit-backdrop-filter: blur(8px) saturate(150%); }`;
   document.head.appendChild(styleElem);
   /* ------------------ MAP ------------------ */
   const map = L.map("map", {
@@ -51,8 +51,8 @@ window.addEventListener("load", () => {
       }
     ),
   };
-  let currentBase = baseLayers.dark.addTo(map);
-  let baseIsDark = true;
+  let currentBase = baseLayers.osm.addTo(map);
+  let baseIsDark = false;
   document.getElementById("basemapSelect").addEventListener("change", (e) => {
     const key = e.target.value;
     if (baseLayers[key]) {
@@ -515,7 +515,7 @@ window.addEventListener("load", () => {
             ? "#777"
             : colorScale(valMetric, min, max);
         const m = L.circleMarker([p.lat, p.lon], {
-          radius: 3,
+          radius: 2,
           color,
           fillColor: color,
           weight: 1,
@@ -969,7 +969,7 @@ window.addEventListener("load", () => {
     }
 
     pointLayer.clearLayers();
-    const radius = 4 + map.getZoom() / 2;
+    const radius = 3 + map.getZoom() / 2;
     points.forEach((p) => {
       const valMetric = metric === "dose" ? p.dose : p.cps;
       const color =
