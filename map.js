@@ -422,6 +422,8 @@ window.addEventListener("load", () => {
             lon: 0,
             dose: 0,
             cps: 0,
+            maxDose: -Infinity,
+            maxCps: -Infinity,
             energy: 0,
             eCount: 0,
             dateSum: 0,
@@ -433,6 +435,8 @@ window.addEventListener("load", () => {
       c.lon += p.lon;
       c.dose += p.dose;
       c.cps += p.cps;
+      c.maxDose = Math.max(c.maxDose, p.dose);
+      c.maxCps = Math.max(c.maxCps, p.cps);
       if (Number.isFinite(p.energy) && p.energy > 0) {
         c.energy += p.energy;
         c.eCount++;
@@ -450,6 +454,8 @@ window.addEventListener("load", () => {
         lon: c.lon / c.count,
         dose: c.dose / c.count,
         cps: c.cps / c.count,
+        maxDose: c.maxDose,
+        maxCps: c.maxCps,
         energy: c.eCount ? c.energy / c.eCount : NaN,
         date: c.dateCount ? c.dateSum / c.dateCount : NaN,
       });
@@ -912,9 +918,9 @@ window.addEventListener("load", () => {
         return;
       }
       points = aggregatePoints(visiblePoints);
-      const vals = visiblePoints
-        .filter((p) => p.dose !== 0 || p.cps !== 0)
-        .map((p) => (metric === "dose" ? p.dose : p.cps));
+      const vals = points
+        .filter((p) => p.maxDose !== 0 || p.maxCps !== 0)
+        .map((p) => (metric === "dose" ? p.maxDose : p.maxCps));
       if (vals.length) {
         min = Math.min(...vals);
         max = Math.max(...vals);
@@ -926,9 +932,9 @@ window.addEventListener("load", () => {
       visibleTrackArr.forEach((t) => {
         const raw = filterByDate(t.points);
         const pts = aggregatePoints(raw);
-        const vals = raw
-          .filter((p) => p.dose !== 0 || p.cps !== 0)
-          .map((p) => (metric === "dose" ? p.dose : p.cps));
+        const vals = pts
+          .filter((p) => p.maxDose !== 0 || p.maxCps !== 0)
+          .map((p) => (metric === "dose" ? p.maxDose : p.maxCps));
         let tMin, tMax;
         if (vals.length) {
           tMin = Math.min(...vals);
@@ -971,9 +977,9 @@ window.addEventListener("load", () => {
     pointLayer.clearLayers();
     const radius = 3 + map.getZoom() / 2;
     points.forEach((p) => {
-      const valMetric = metric === "dose" ? p.dose : p.cps;
+      const valMetric = metric === "dose" ? p.maxDose : p.maxCps;
       const color =
-        p.dose === 0 && p.cps === 0
+        p.maxDose === 0 && p.maxCps === 0
           ? "#777"
           : colorScale(valMetric, p._min, p._max);
       const marker = L.circleMarker([p.lat, p.lon], {
