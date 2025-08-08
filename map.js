@@ -187,12 +187,18 @@ window.addEventListener("load", () => {
       const js = JSON.parse(text);
       const markers = Array.isArray(js) ? js : js.markers;
       if (Array.isArray(markers)) {
-        const factor = js.sv === false ? 0.01 : 1;
+        const unit = (js.unit || js.units || "").toLowerCase();
+        const factor = js.sv === false || unit.includes("ur") ? 0.01 : 1;
+        const getDose = (m) => {
+          if (m.dose_uSv_h != null) return +m.dose_uSv_h;
+          if (m.dose_uR_h != null) return +m.dose_uR_h * 0.01;
+          return +(m.doseRate ?? m.dose ?? 0) * factor;
+        };
         return markers
           .map((m) => ({
             lat: +m.lat,
             lon: +m.lon,
-            dose: +(m.doseRate ?? m.dose_uSv_h ?? m.dose ?? 0) * factor,
+            dose: getDose(m),
             cps: +(m.countRate ?? m.cps ?? 0),
             energy: +(m.energy ?? m.energyValue ?? m.energy_ev ?? NaN),
             date: +m.date || 0,
@@ -208,14 +214,24 @@ window.addEventListener("load", () => {
         const objs = lines.map((l) => JSON.parse(l));
         if (objs.every((o) => typeof o === "object")) {
           return objs
-            .map((m) => ({
-              lat: +m.lat,
-              lon: +m.lon,
-              dose: +(m.doseRate ?? m.dose_uSv_h ?? m.dose ?? 0),
-              cps: +(m.countRate ?? m.cps ?? 0),
-              energy: +(m.energy ?? m.energyValue ?? m.energy_ev ?? NaN),
-              date: +m.date || 0,
-            }))
+            .map((m) => {
+              const unit = (m.unit || m.units || "").toLowerCase();
+              const factor = m.sv === false || unit.includes("ur") ? 0.01 : 1;
+              const dose =
+                m.dose_uSv_h != null
+                  ? +m.dose_uSv_h
+                  : m.dose_uR_h != null
+                  ? +m.dose_uR_h * 0.01
+                  : +(m.doseRate ?? m.dose ?? 0) * factor;
+              return {
+                lat: +m.lat,
+                lon: +m.lon,
+                dose,
+                cps: +(m.countRate ?? m.cps ?? 0),
+                energy: +(m.energy ?? m.energyValue ?? m.energy_ev ?? NaN),
+                date: +m.date || 0,
+              };
+            })
             .filter((p) => !isNaN(p.lat) && !isNaN(p.lon));
         }
       }
@@ -235,11 +251,15 @@ window.addEventListener("load", () => {
       const cpsIdx = f.findIndex((v) => v.includes('count'));
       const dateIdx = f.findIndex((v) => v.startsWith('time') || v.includes('stamp') || v === 'date');
       if (latIdx >= 0 && lonIdx >= 0) {
+        const unitHeader = parsed.meta.fields[doseIdx]
+          ? parsed.meta.fields[doseIdx].toLowerCase()
+          : "";
+        const factor = unitHeader.includes("ur") ? 0.01 : 1;
         return parsed.data
           .map((row) => ({
             lat: +row[parsed.meta.fields[latIdx]],
             lon: +row[parsed.meta.fields[lonIdx]],
-            dose: +(row[parsed.meta.fields[doseIdx]] ?? 0),
+            dose: +(row[parsed.meta.fields[doseIdx]] ?? 0) * factor,
             cps: +(row[parsed.meta.fields[cpsIdx]] ?? 0),
             energy: +row.energy || +row.energy_ev || NaN,
             date: +(row[parsed.meta.fields[dateIdx]] ?? 0),
