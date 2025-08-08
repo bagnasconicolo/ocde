@@ -165,6 +165,15 @@ window.addEventListener("load", () => {
   });
 
   /* ------------------ HELPERS ------------------ */
+  const doseUnitFactor = (unit, svFlag) => {
+    const u = (unit || "").toLowerCase();
+    const ROENTGEN_USV = 0.0096; // 1 µR/h ≈ 0.0096 µSv/h
+    if (svFlag === false) return ROENTGEN_USV;
+    if (u.includes("µr") || u.includes("ur")) return ROENTGEN_USV;
+    if (u.includes("mr")) return ROENTGEN_USV * 1000;
+    if (u.includes("r")) return ROENTGEN_USV * 1e6;
+    return 1;
+  };
   const fetchTrackList = async () => {
     try {
       const res = await fetch("/api/tracks", { cache: "no-store" });
@@ -187,8 +196,8 @@ window.addEventListener("load", () => {
       const js = JSON.parse(text);
       const markers = Array.isArray(js) ? js : js.markers;
       if (Array.isArray(markers)) {
-        const unit = (js.unit || js.units || "").toLowerCase();
-        const factor = js.sv === false || unit.includes("ur") ? 0.01 : 1;
+        const unit = js.unit || js.units || "";
+        const factor = doseUnitFactor(unit, js.sv);
         const getDose = (m) => {
           if (m.dose_uSv_h != null) return +m.dose_uSv_h;
           if (m.dose_uR_h != null) return +m.dose_uR_h * 0.01;
@@ -215,8 +224,8 @@ window.addEventListener("load", () => {
         if (objs.every((o) => typeof o === "object")) {
           return objs
             .map((m) => {
-              const unit = (m.unit || m.units || "").toLowerCase();
-              const factor = m.sv === false || unit.includes("ur") ? 0.01 : 1;
+              const unit = m.unit || m.units || "";
+              const factor = doseUnitFactor(unit, m.sv);
               const dose =
                 m.dose_uSv_h != null
                   ? +m.dose_uSv_h
@@ -251,10 +260,8 @@ window.addEventListener("load", () => {
       const cpsIdx = f.findIndex((v) => v.includes('count'));
       const dateIdx = f.findIndex((v) => v.startsWith('time') || v.includes('stamp') || v === 'date');
       if (latIdx >= 0 && lonIdx >= 0) {
-        const unitHeader = parsed.meta.fields[doseIdx]
-          ? parsed.meta.fields[doseIdx].toLowerCase()
-          : "";
-        const factor = unitHeader.includes("ur") ? 0.01 : 1;
+        const unitHeader = parsed.meta.fields[doseIdx] || "";
+        const factor = doseUnitFactor(unitHeader);
         return parsed.data
           .map((row) => ({
             lat: +row[parsed.meta.fields[latIdx]],

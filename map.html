@@ -672,6 +672,15 @@
         /* highlight on hover handled via CSS */
 
         /* ------------------ HELPERS ------------------ */
+        const doseUnitFactor = (unit, svFlag) => {
+          const u = (unit || "").toLowerCase();
+          const ROENTGEN_USV = 0.0096; // 1 µR/h ≈ 0.0096 µSv/h
+          if (svFlag === false) return ROENTGEN_USV;
+          if (u.includes("µr") || u.includes("ur")) return ROENTGEN_USV;
+          if (u.includes("mr")) return ROENTGEN_USV * 1000;
+          if (u.includes("r")) return ROENTGEN_USV * 1e6;
+          return 1;
+        };
         const fetchTrackList = async () => {
           try {
             const res = await fetch("/api/tracks", { cache: "no-store" });
@@ -697,8 +706,8 @@
             const js = JSON.parse(text);
             const markers = Array.isArray(js) ? js : js.markers;
             if (Array.isArray(markers)) {
-              const unit = (js.unit || js.units || "").toLowerCase();
-              const factor = js.sv === false || unit.includes("ur") ? 0.01 : 1;
+              const unit = js.unit || js.units || "";
+              const factor = doseUnitFactor(unit, js.sv);
               const getDose = (m) => {
                 if (m.dose_uSv_h != null) return +m.dose_uSv_h;
                 if (m.dose_uR_h != null) return +m.dose_uR_h * 0.01;
@@ -726,8 +735,8 @@
               if (objs.every((o) => typeof o === "object")) {
                 const points = objs
                   .map((m) => {
-                    const unit = (m.unit || m.units || "").toLowerCase();
-                    const factor = m.sv === false || unit.includes("ur") ? 0.01 : 1;
+                    const unit = m.unit || m.units || "";
+                    const factor = doseUnitFactor(unit, m.sv);
                     const dose =
                       m.dose_uSv_h != null
                         ? +m.dose_uSv_h
@@ -761,7 +770,7 @@
           let factor = 1;
           if (rows.length && typeof rows[0][5] === "string") {
             const header = rows.shift();
-            if (header[5].toLowerCase().includes("ur")) factor = 0.01;
+            factor = doseUnitFactor(header[5]);
           }
 
           let points;
