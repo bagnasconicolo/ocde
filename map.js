@@ -167,10 +167,12 @@ window.addEventListener("load", () => {
   /* ------------------ HELPERS ------------------ */
   const doseUnitFactor = (unit, svFlag) => {
     const u = (unit || "").toLowerCase();
-    if (svFlag === false) return 0.01;
-    if (u.includes("µr") || u.includes("ur")) return 0.01;
-    if (u.includes("mr")) return 10;
-    if (u.includes("r")) return 10000;
+    const ROENTGEN_USV = 0.0096; // 1 µR/h ≈ 0.0096 µSv/h
+    if (svFlag === false) return ROENTGEN_USV;
+    if (u.includes("µr") || u.includes("ur")) return ROENTGEN_USV;
+    if (u.includes("mr")) return ROENTGEN_USV * 1000;
+    if (u.includes("r")) return ROENTGEN_USV * 1e6;
+
     return 1;
   };
   const fetchTrackList = async () => {
