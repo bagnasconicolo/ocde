@@ -175,6 +175,7 @@ window.addEventListener("load", () => {
 
     return 1;
   };
+  const USV_TO_UR = 1 / doseUnitFactor("ur");
   const fetchTrackList = async () => {
     try {
       const res = await fetch("/api/tracks", { cache: "no-store" });
@@ -682,22 +683,22 @@ window.addEventListener("load", () => {
             <div class='prose prose-sm prose-invert max-w-none mb-4'>
               <h3 class='text-lg font-semibold'>${tracks[fname].title}</h3>
             </div>
-            <div class='grid grid-cols-3 gap-2 sm:gap-4 mb-4 text-center text-xs sm:text-sm'>
-              <div class='glass-panel p-2 rounded-lg'>
-                <div class='text-gray-400'>Dose min</div>
-                <div id='stat-min-dose-${uid}' class='text-lg font-semibold text-sky-400'>0</div>
-                <div class='text-gray-400'>µSv/h</div>
-              </div>
-              <div class='glass-panel p-2 rounded-lg'>
-                <div class='text-gray-400'>Dose avg</div>
-                <div id='stat-avg-dose-${uid}' class='text-lg font-semibold text-sky-400'>0</div>
-                <div class='text-gray-400'>µSv/h</div>
-              </div>
-              <div class='glass-panel p-2 rounded-lg'>
-                <div class='text-gray-400'>Dose max</div>
-                <div id='stat-max-dose-${uid}' class='text-lg font-semibold text-sky-400'>0</div>
-                <div class='text-gray-400'>µSv/h</div>
-              </div>
+              <div class='grid grid-cols-3 gap-2 sm:gap-4 mb-4 text-center text-xs sm:text-sm'>
+                <div class='glass-panel p-2 rounded-lg'>
+                  <div class='text-gray-400'>Dose min</div>
+                  <div id='stat-min-dose-${uid}' class='text-lg font-semibold text-sky-400'>0</div>
+                  <div class='text-gray-400'>µR/h</div>
+                </div>
+                <div class='glass-panel p-2 rounded-lg'>
+                  <div class='text-gray-400'>Dose avg</div>
+                  <div id='stat-avg-dose-${uid}' class='text-lg font-semibold text-sky-400'>0</div>
+                  <div class='text-gray-400'>µR/h</div>
+                </div>
+                <div class='glass-panel p-2 rounded-lg'>
+                  <div class='text-gray-400'>Dose max</div>
+                  <div id='stat-max-dose-${uid}' class='text-lg font-semibold text-sky-400'>0</div>
+                  <div class='text-gray-400'>µR/h</div>
+                </div>
               <div class='glass-panel p-2 rounded-lg'>
                 <div class='text-gray-400'>Rate min</div>
                 <div id='stat-min-cps-${uid}' class='text-lg font-semibold text-amber-400'>0</div>
@@ -741,21 +742,21 @@ window.addEventListener("load", () => {
               trackPopup.classList.add("hidden")
             );
 
-          animateCounter(
-            document.getElementById(`stat-min-dose-${uid}`),
-            stats.minDose,
-            3
-          );
-          animateCounter(
-            document.getElementById(`stat-avg-dose-${uid}`),
-            stats.avgDose,
-            3
-          );
-          animateCounter(
-            document.getElementById(`stat-max-dose-${uid}`),
-            stats.maxDose,
-            3
-          );
+            animateCounter(
+              document.getElementById(`stat-min-dose-${uid}`),
+              stats.minDose * USV_TO_UR,
+              3
+            );
+            animateCounter(
+              document.getElementById(`stat-avg-dose-${uid}`),
+              stats.avgDose * USV_TO_UR,
+              3
+            );
+            animateCounter(
+              document.getElementById(`stat-max-dose-${uid}`),
+              stats.maxDose * USV_TO_UR,
+              3
+            );
           animateCounter(
             document.getElementById(`stat-min-cps-${uid}`),
             stats.minCps,
@@ -777,8 +778,8 @@ window.addEventListener("load", () => {
             const plotDoseDiv = document.getElementById(plotDoseId);
             if (!plotCpsDiv || !plotDoseDiv) return;
             const x = filtered.map((p) => new Date(p.date * 1000));
-            const dosesArr = filtered.map((p) => p.dose);
-            const cpsArr = filtered.map((p) => p.cps);
+              const dosesArr = filtered.map((p) => p.dose * USV_TO_UR);
+              const cpsArr = filtered.map((p) => p.cps);
 
             const movingAvg = (arr, w) => {
               if (w <= 1) return arr;
@@ -828,37 +829,37 @@ window.addEventListener("load", () => {
             };
 
               const drawDose = (w) => {
-              const vals = movingAvg(dosesArr, w);
-              Plotly.newPlot(
-                plotDoseDiv,
-                [
-                  {
-                    x,
-                    y: vals,
-                    name: "Dose (µSv/h)",
-                    type: "scatter",
-                    mode: "lines",
-                    line: {
-                      width: 2,
-                      color: "#38bdf8",
+                const vals = movingAvg(dosesArr, w);
+                Plotly.newPlot(
+                  plotDoseDiv,
+                  [
+                    {
+                      x,
+                      y: vals,
+                      name: "Dose (µR/h)",
+                      type: "scatter",
+                      mode: "lines",
+                      line: {
+                        width: 2,
+                        color: "#38bdf8",
+                      },
                     },
+                  ],
+                  {
+                    margin: { l: 40, r: 40, t: 10, b: 30 },
+                    paper_bgcolor: "#1f2937",
+                    plot_bgcolor: "#1f2937",
+                    font: { color: "#ffffff", size: 10 },
+                    xaxis: {
+                      title: "time",
+                      type: "date",
+                      showgrid: false,
+                      rangeslider: { visible: true },
+                    },
+                    yaxis: { title: "µR/h", showgrid: false },
                   },
-                ],
-                {
-                  margin: { l: 40, r: 40, t: 10, b: 30 },
-                  paper_bgcolor: "#1f2937",
-                  plot_bgcolor: "#1f2937",
-                  font: { color: "#ffffff", size: 10 },
-                  xaxis: {
-                    title: "time",
-                    type: "date",
-                    showgrid: false,
-                    rangeslider: { visible: true },
-                  },
-                  yaxis: { title: "µSv/h", showgrid: false },
-                },
-                { responsive: true, displaylogo: false }
-              );
+                  { responsive: true, displaylogo: false }
+                );
               document.getElementById(`valDose-${uid}`).textContent = w;
             };
 
@@ -885,26 +886,26 @@ window.addEventListener("load", () => {
             );
 
             const histDoseDiv = document.getElementById(histDoseId);
-            Plotly.newPlot(
-              histDoseDiv,
-              [
+              Plotly.newPlot(
+                histDoseDiv,
+                [
+                  {
+                    x: dosesArr,
+                    type: "histogram",
+                    opacity: 0.6,
+                    marker: { color: "#38bdf8" },
+                  },
+                ],
                 {
-                  x: dosesArr,
-                  type: "histogram",
-                  opacity: 0.6,
-                  marker: { color: "#38bdf8" },
+                  margin: { l: 30, r: 20, t: 10, b: 30 },
+                  paper_bgcolor: "#1f2937",
+                  plot_bgcolor: "#1f2937",
+                  font: { color: "#ffffff", size: 10 },
+                  xaxis: { title: "µR/h", showgrid: false },
+                  yaxis: { title: "freq", showgrid: false },
                 },
-              ],
-              {
-                margin: { l: 30, r: 20, t: 10, b: 30 },
-                paper_bgcolor: "#1f2937",
-                plot_bgcolor: "#1f2937",
-                font: { color: "#ffffff", size: 10 },
-                xaxis: { title: "µSv/h", showgrid: false },
-                yaxis: { title: "freq", showgrid: false },
-              },
-              { responsive: true, displaylogo: false }
-            );
+                { responsive: true, displaylogo: false }
+              );
 
             // sliders
             drawCps(1);
@@ -992,15 +993,16 @@ window.addEventListener("load", () => {
     }
 
     if (globalScale || singleTrack) {
-      const legendLabel = document.getElementById("legend-label");
-      const legendBar = document.getElementById("legend-bar");
-      const legendMin = document.getElementById("legend-min");
-      const legendMax = document.getElementById("legend-max");
-      const decimals = metric === "dose" ? 3 : 1;
-      legendLabel.textContent =
-        metric === "dose" ? "Dose (µSv/h)" : "Rate (cps)";
-      legendMin.textContent = min.toFixed(decimals);
-      legendMax.textContent = max.toFixed(decimals);
+        const legendLabel = document.getElementById("legend-label");
+        const legendBar = document.getElementById("legend-bar");
+        const legendMin = document.getElementById("legend-min");
+        const legendMax = document.getElementById("legend-max");
+        const decimals = metric === "dose" ? 3 : 1;
+        const factor = metric === "dose" ? USV_TO_UR : 1;
+        legendLabel.textContent =
+          metric === "dose" ? "Dose (µR/h)" : "Rate (cps)";
+        legendMin.textContent = (min * factor).toFixed(decimals);
+        legendMax.textContent = (max * factor).toFixed(decimals);
       const cMin = colorScale(min, min, max);
       const cMid = colorScale((min + max) / 2, min, max);
       const cMax = colorScale(max, min, max);
@@ -1035,18 +1037,19 @@ window.addEventListener("load", () => {
       const hasEnergy = Number.isFinite(p.energy) && p.energy > 0;
       const cols = hasEnergy ? 3 : 2;
       let popupHtml = `<div class='prose prose-sm prose-invert'>`;
-      popupHtml +=
-        `<div class='grid grid-cols-${cols} gap-2 text-center text-xs'>` +
-        `<div class='glass-panel p-2 rounded-lg'>` +
-        `<div class='text-gray-400'>Dose</div>` +
-        `<div class='text-lg font-semibold text-sky-400'>${p.dose.toFixed(3)}</div>` +
-        `<div class='text-gray-400'>µSv/h</div>` +
-        `</div>` +
-        `<div class='glass-panel p-2 rounded-lg'>` +
-        `<div class='text-gray-400'>Rate</div>` +
-        `<div class='text-lg font-semibold text-amber-400'>${p.cps.toFixed(1)}</div>` +
-        `<div class='text-gray-400'>cps</div>` +
-        `</div>`;
+        const doseUr = (p.dose * USV_TO_UR).toFixed(3);
+        popupHtml +=
+          `<div class='grid grid-cols-${cols} gap-2 text-center text-xs'>` +
+          `<div class='glass-panel p-2 rounded-lg'>` +
+          `<div class='text-gray-400'>Dose</div>` +
+          `<div class='text-lg font-semibold text-sky-400'>${doseUr}</div>` +
+          `<div class='text-gray-400'>µR/h</div>` +
+          `</div>` +
+          `<div class='glass-panel p-2 rounded-lg'>` +
+          `<div class='text-gray-400'>Rate</div>` +
+          `<div class='text-lg font-semibold text-amber-400'>${p.cps.toFixed(1)}</div>` +
+          `<div class='text-gray-400'>cps</div>` +
+          `</div>`;
       if (hasEnergy) {
         popupHtml +=
           `<div class='glass-panel p-2 rounded-lg'>` +
