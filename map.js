@@ -182,29 +182,31 @@ window.addEventListener("load", () => {
       const data = await res.json();
       return Array.isArray(data)
         ? data.map((t) =>
-            typeof t === "string" ? { file: t, title: "", description: "" } : t
+            typeof t === "string"
+              ? { file: t, title: "", description: "", unit: "usv" }
+              : { unit: t.unit || "usv", ...t }
           )
         : [];
     } catch {
       console.warn("track_index.json missing → fallback list");
-      return FALLBACK_TRACK_FILES.map((f) => ({ file: f, title: "", description: "" }));
+      return FALLBACK_TRACK_FILES.map((f) => ({ file: f, title: "", description: "", unit: "usv" }));
     }
   };
 
-  const parseFile = (text) => {
+  const parseFile = (text, defaultUnit = "") => {
     // .rctrk JSON (object with markers or plain array)
     try {
       const js = JSON.parse(text);
       const markers = Array.isArray(js) ? js : js.markers;
       if (Array.isArray(markers)) {
-        const unit = js.unit || js.units || "";
+        const unit = js.unit || js.units || defaultUnit || "";
         const factor = doseUnitFactor(unit, js.sv);
         const getDose = (m) => {
           if (m.dose_uSv_h != null) return +m.dose_uSv_h;
-          if (m.dose_uR_h != null) return +m.dose_uR_h * 0.01;
+          if (m.dose_uR_h != null) return +m.dose_uR_h * doseUnitFactor("ur");
           return +(m.doseRate ?? m.dose ?? 0) * factor;
         };
-        return markers
+        const points = markers
           .map((m) => ({
             lat: +m.lat,
             lon: +m.lon,
@@ -214,6 +216,7 @@ window.addEventListener("load", () => {
             date: +m.date || 0,
           }))
           .filter((p) => !isNaN(p.lat) && !isNaN(p.lon));
+        return { points, title: js.title };
       }
     } catch (_) {}
 
@@ -223,15 +226,15 @@ window.addEventListener("load", () => {
       if (lines.length > 1) {
         const objs = lines.map((l) => JSON.parse(l));
         if (objs.every((o) => typeof o === "object")) {
-          return objs
+          const points = objs
             .map((m) => {
-              const unit = m.unit || m.units || "";
+              const unit = m.unit || m.units || defaultUnit || "";
               const factor = doseUnitFactor(unit, m.sv);
               const dose =
                 m.dose_uSv_h != null
                   ? +m.dose_uSv_h
                   : m.dose_uR_h != null
-                  ? +m.dose_uR_h * 0.01
+                  ? +m.dose_uR_h * doseUnitFactor("ur")
                   : +(m.doseRate ?? m.dose ?? 0) * factor;
               return {
                 lat: +m.lat,
@@ -243,6 +246,7 @@ window.addEventListener("load", () => {
               };
             })
             .filter((p) => !isNaN(p.lat) && !isNaN(p.lon));
+          return { points };
         }
       }
     } catch (_) {}
@@ -253,6 +257,7 @@ window.addEventListener("load", () => {
       dynamicTyping: true,
       skipEmptyLines: true,
     });
+    const defaultFactor = doseUnitFactor(defaultUnit);
     if (parsed.meta.fields && parsed.meta.fields.length > 0) {
       const f = parsed.meta.fields.map((h) => h.toLowerCase());
       const latIdx = f.findIndex((v) => v.startsWith('lat'));
@@ -262,8 +267,8 @@ window.addEventListener("load", () => {
       const dateIdx = f.findIndex((v) => v.startsWith('time') || v.includes('stamp') || v === 'date');
       if (latIdx >= 0 && lonIdx >= 0) {
         const unitHeader = parsed.meta.fields[doseIdx] || "";
-        const factor = doseUnitFactor(unitHeader);
-        return parsed.data
+        const factor = doseUnitFactor(unitHeader || defaultUnit);
+        const points = parsed.data
           .map((row) => ({
             lat: +row[parsed.meta.fields[latIdx]],
             lon: +row[parsed.meta.fields[lonIdx]],
@@ -273,6 +278,7 @@ window.addEventListener("load", () => {
             date: +(row[parsed.meta.fields[dateIdx]] ?? 0),
           }))
           .filter((p) => !isNaN(p.lat) && !isNaN(p.lon));
+        return { points };
       }
     }
 
@@ -289,29 +295,31 @@ window.addEventListener("load", () => {
       rows.shift();
     }
     if (rows.length && rows[0].length >= 7) {
-      return rows
+      const points = rows
         .map((r) => ({
           lat: +r[2],
           lon: +r[3],
-          dose: +r[5],
+          dose: +r[5] * defaultFactor,
           cps: +r[6],
           energy: +r[7] || NaN,
           date: +r[0] || 0,
         }))
         .filter((p) => !isNaN(p.lat) && !isNaN(p.lon));
+      return { points };
     }
 
-    return rows
+    const points = rows
       .filter((r) => r.length >= 4)
       .map((r) => ({
         lat: +r[0],
         lon: +r[1],
-        dose: +r[2],
+        dose: +r[2] * defaultFactor,
         cps: +r[3],
         energy: +r[4] || NaN,
         date: 0,
       }))
       .filter((p) => !isNaN(p.lat) && !isNaN(p.lon));
+    return { points };
   };
 
   const ramp = (colors, t) => {
@@ -593,7 +601,7 @@ window.addEventListener("load", () => {
       try {
         const res = await fetch(fname);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const { points: pts, title: fileTitle } = parseFile(await res.text());
+        const { points: pts, title: fileTitle } = parseFile(await res.text(), item.unit);
         const metaTitle = item.title || '';
         const description = item.description || '';
         const title = metaTitle || fileTitle || fname.split("/").pop();

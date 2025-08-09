@@ -688,7 +688,9 @@
             const data = await res.json();
             return Array.isArray(data)
               ? data.map((t) =>
-                  typeof t === "string" ? { file: t, title: "", description: "" } : t
+                  typeof t === "string"
+                    ? { file: t, title: "", description: "", unit: "usv" }
+                    : { unit: t.unit || "usv", ...t }
                 )
               : [];
           } catch {
@@ -696,21 +698,21 @@
             errorMessage.textContent =
               "Could not fetch track_index.json, using fallback list.";
             errorMessage.classList.remove("hidden");
-            return FALLBACK_TRACK_FILES.map((f) => ({ file: f, title: "", description: "" }));
+            return FALLBACK_TRACK_FILES.map((f) => ({ file: f, title: "", description: "", unit: "usv" }));
           }
         };
 
-        const parseFile = (text) => {
+        const parseFile = (text, defaultUnit = "") => {
           // .rctrk JSON (object with markers or plain array)
           try {
             const js = JSON.parse(text);
             const markers = Array.isArray(js) ? js : js.markers;
             if (Array.isArray(markers)) {
-              const unit = js.unit || js.units || "";
+              const unit = js.unit || js.units || defaultUnit || "";
               const factor = doseUnitFactor(unit, js.sv);
               const getDose = (m) => {
                 if (m.dose_uSv_h != null) return +m.dose_uSv_h;
-                if (m.dose_uR_h != null) return +m.dose_uR_h * 0.01;
+                if (m.dose_uR_h != null) return +m.dose_uR_h * doseUnitFactor("ur");
                 return +(m.doseRate ?? m.dose ?? 0) * factor;
               };
               const points = markers
@@ -735,13 +737,13 @@
               if (objs.every((o) => typeof o === "object")) {
                 const points = objs
                   .map((m) => {
-                    const unit = m.unit || m.units || "";
+                    const unit = m.unit || m.units || defaultUnit || "";
                     const factor = doseUnitFactor(unit, m.sv);
                     const dose =
                       m.dose_uSv_h != null
                         ? +m.dose_uSv_h
                         : m.dose_uR_h != null
-                        ? +m.dose_uR_h * 0.01
+                        ? +m.dose_uR_h * doseUnitFactor("ur")
                         : +(m.doseRate ?? m.dose ?? 0) * factor;
                     return {
                       lat: +m.lat,
@@ -767,10 +769,10 @@
           });
 
           const rows = parsed.data.filter((r) => r.length >= 7);
-          let factor = 1;
+          let factor = doseUnitFactor(defaultUnit);
           if (rows.length && typeof rows[0][5] === "string") {
             const header = rows.shift();
-            factor = doseUnitFactor(header[5]);
+            factor = doseUnitFactor(header[5] || defaultUnit);
           }
 
           let points;
@@ -1272,7 +1274,7 @@
             try {
               const res = await fetch(fname);
               if (!res.ok) throw new Error(`HTTP ${res.status}`);
-              const { points: pts, title: fileTitle } = parseFile(await res.text());
+              const { points: pts, title: fileTitle } = parseFile(await res.text(), item.unit);
               const metaTitle = item.title || '';
               const description = item.description || '';
               const title = metaTitle || fileTitle || fname.split("/").pop();

@@ -10,7 +10,7 @@ const trackFiles = fs
   .readdirSync(DATA_DIR)
   .filter(f => f.toLowerCase().endsWith('.rctrk'))
   .sort()
-  .map(f => ({ file: `data/${f}`, title: '', description: '' }));
+  .map(f => ({ file: `data/${f}`, title: '', description: '', unit: 'usv' }));
 
 fs.writeFileSync(indexPath, JSON.stringify(trackFiles, null, 2) + '\n');
 console.log(`Updated ${indexPath} with ${trackFiles.length} track file(s)`);
