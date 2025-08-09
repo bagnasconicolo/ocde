@@ -78,7 +78,9 @@ app.get('/api/tracks', requireAuth, (req, res) => {
   let index = readJson('track_index.json');
   if (Array.isArray(index)) {
     index = index.map((t) =>
-      typeof t === 'string' ? { file: t, title: '', description: '' } : t
+      typeof t === 'string'
+        ? { file: t, title: '', description: '', unit: 'usv' }
+        : { unit: t.unit || 'usv', ...t }
     );
   } else {
     index = [];
@@ -95,7 +97,8 @@ app.post('/api/tracks', requireAuth, trackStorage.single('file'), (req, res) => 
   const entry = {
     file: filePath,
     title: req.body.title || '',
-    description: req.body.description || ''
+    description: req.body.description || '',
+    unit: req.body.unit || 'usv'
   };
   index.push(entry);
   writeJson('track_index.json', index);
@@ -103,12 +106,12 @@ app.post('/api/tracks', requireAuth, trackStorage.single('file'), (req, res) => 
 });
 
 app.put('/api/tracks', requireAuth, (req, res) => {
-  const { file, title = '', description = '' } = req.body;
+  const { file, title = '', description = '', unit = 'usv' } = req.body;
   let index = readJson('track_index.json');
   if (!Array.isArray(index)) index = [];
   index = index.map((t) => {
     if ((typeof t === 'string' ? t : t.file) === file) {
-      return { file, title, description };
+      return { file, title, description, unit };
     }
     return t;
   });

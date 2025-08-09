@@ -221,12 +221,16 @@
             <input type="file" name="file" accept=".rctrk" class="w-full bg-gray-700 rounded" required />
             <input name="title" placeholder="Title" class="w-full bg-gray-700 rounded px-2 py-1" />
             <textarea name="description" rows="2" placeholder="Description" class="w-full bg-gray-700 rounded px-2 py-1"></textarea>
+            <select name="unit" class="w-full bg-gray-700 rounded px-2 py-1">
+              <option value="usv">µSv/h</option>
+              <option value="ur">µR/h</option>
+            </select>
             <button class="bg-green-600 hover:bg-green-500 px-4 py-1 rounded">Upload</button>
           </form>`;
         const list = sec.querySelector('#trackList');
         list.innerHTML = '';
         tracks.forEach(t => {
-          const track = typeof t === 'string' ? { file: t, title: '', description: '' } : t;
+          const track = typeof t === 'string' ? { file: t, title: '', description: '', unit: 'usv' } : t;
           const div = document.createElement('div');
           div.className = 'bg-gray-800 p-4 rounded space-y-2';
           div.innerHTML = `
@@ -236,6 +240,10 @@
             </div>
             <input data-file="${track.file}" class="trackTitle w-full bg-gray-700 rounded px-2 py-1" placeholder="Title" value="${track.title || ''}" />
             <textarea data-file="${track.file}" class="trackDesc w-full bg-gray-700 rounded px-2 py-1" rows="2" placeholder="Description">${track.description || ''}</textarea>
+            <select data-file="${track.file}" class="trackUnit w-full bg-gray-700 rounded px-2 py-1">
+              <option value="usv" ${track.unit === 'ur' ? '' : 'selected'}>µSv/h</option>
+              <option value="ur" ${track.unit === 'ur' ? 'selected' : ''}>µR/h</option>
+            </select>
             <button data-file="${track.file}" class="saveTrack bg-blue-600 hover:bg-blue-500 px-2 py-1 rounded text-sm">Save</button>`;
           list.appendChild(div);
         });
@@ -255,10 +263,11 @@
             const div = btn.parentElement;
             const title = div.querySelector('.trackTitle').value;
             const description = div.querySelector('.trackDesc').value;
+            const unit = div.querySelector('.trackUnit').value;
             await fetch('/api/tracks', {
               method: 'PUT',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ file: btn.dataset.file, title, description })
+              body: JSON.stringify({ file: btn.dataset.file, title, description, unit })
             });
           });
         });
