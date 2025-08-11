@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>La Miniera della Morte - Podcast</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Libre Baskerville', serif;
+            background: linear-gradient(135deg, #faf8f5 0%, #f7f3ed 100%);
+            background-attachment: fixed;
+            min-height: 100vh;
+            color: #2c2c2c;
+            padding: 20px;
+            position: relative;
+        }
+        
+        /* Paper texture overlay */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.02) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 177, 153, 0.02) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(120, 119, 198, 0.01) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 1;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .podcast-header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            box-shadow: 
+                0 8px 32px rgba(0, 0, 0, 0.06),
+                inset 0 1px 0 rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            position: relative;
+        }
+        
+        .podcast-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                repeating-linear-gradient(
+                    45deg,
+                    transparent,
+                    transparent 2px,
+                    rgba(0, 0, 0, 0.002) 2px,
+                    rgba(0, 0, 0, 0.002) 4px
+                );
+            border-radius: 20px;
+            pointer-events: none;
+        }
+        
+        .podcast-cover {
+            width: 200px;
+            height: 200px;
+            margin: 0 auto 25px;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 
+                0 12px 40px rgba(0, 0, 0, 0.15),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            border: 3px solid rgba(255, 255, 255, 0.8);
+        }
+        
+        .podcast-cover img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .podcast-title {
+            font-size: 2.4em;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: #2c2c2c;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+            line-height: 1.2;
+        }
+        
+        .podcast-subtitle {
+            font-size: 1.1em;
+            color: #8b4513;
+            font-weight: 400;
+            margin-bottom: 20px;
+            font-style: italic;
+        }
+        
+        .podcast-description {
+            font-size: 1em;
+            color: #5a5a5a;
+            line-height: 1.6;
+            text-align: justify;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        
+        .links-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            align-items: center;
+        }
+        
+        .platform-button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            padding: 16px 32px;
+            width: 280px;
+            background: rgba(255, 255, 255, 0.85);
+            border: 2px solid rgba(139, 69, 19, 0.1);
+            border-radius: 50px;
+            color: #2c2c2c;
+            font-family: 'Libre Baskerville', serif;
+            font-size: 1.1em;
+            font-weight: 600;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(5px);
+            box-shadow: 
+                0 6px 20px rgba(0, 0, 0, 0.08),
+                inset 0 1px 0 rgba(255, 255, 255, 0.9);
+        }
+        
+        .platform-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 30% 30%, rgba(139, 69, 19, 0.02) 0%, transparent 50%),
+                radial-gradient(circle at 70% 70%, rgba(139, 69, 19, 0.015) 0%, transparent 50%);
+            pointer-events: none;
+        }
+        
+        .platform-button::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(
+                45deg,
+                transparent,
+                rgba(139, 69, 19, 0.1),
+                transparent
+            );
+            transform: rotate(45deg) translateX(-100%);
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+        }
+        
+        .platform-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 
+                0 12px 40px rgba(0, 0, 0, 0.12),
+                inset 0 1px 0 rgba(255, 255, 255, 0.9);
+            border-color: rgba(139, 69, 19, 0.2);
+            background: rgba(255, 255, 255, 0.95);
+        }
+        
+        .platform-button:hover::after {
+            transform: rotate(45deg) translateX(100%);
+        }
+        
+        .platform-button:active {
+            transform: translateY(-1px);
+            transition: transform 0.1s ease;
+        }
+        
+        .platform-icon {
+            width: 32px;
+            height: 32px;
+            margin-right: 12px;
+            border-radius: 6px;
+        }
+        
+        /* Platform-specific styling */
+        .spotify {
+            background-color: rgba(29, 185, 84, 0.05);
+        }
+        
+        .spotify:hover {
+            background-color: rgba(29, 185, 84, 0.1);
+            border-color: rgba(29, 185, 84, 0.3);
+        }
+        
+        .amazon {
+            background-color: rgba(255, 159, 10, 0.05);
+        }
+        
+        .amazon:hover {
+            background-color: rgba(255, 159, 10, 0.1);
+            border-color: rgba(255, 159, 10, 0.3);
+        }
+        
+        .apple {
+            background-color: rgba(162, 132, 245, 0.05);
+        }
+        
+        .apple:hover {
+            background-color: rgba(162, 132, 245, 0.1);
+            border-color: rgba(162, 132, 245, 0.3);
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            color: #8a8a8a;
+            font-size: 0.9em;
+            font-style: italic;
+        }
+        
+        /* Mobile responsiveness */
+        @media (max-width: 600px) {
+            .container {
+                margin: 0 10px;
+            }
+            
+            .podcast-header {
+                padding: 25px 20px;
+                margin-bottom: 30px;
+            }
+            
+            .podcast-cover {
+                width: 160px;
+                height: 160px;
+                margin-bottom: 20px;
+            }
+            
+            .podcast-title {
+                font-size: 2em;
+            }
+            
+            .podcast-subtitle {
+                font-size: 1em;
+            }
+            
+            .podcast-description {
+                font-size: 0.95em;
+                text-align: left;
+            }
+            
+            .platform-button {
+                width: 260px;
+                padding: 14px 28px;
+                font-size: 1em;
+            }
+            
+            .platform-icon {
+                width: 28px;
+                height: 28px;
+            }
+        }
+        
+        @media (max-width: 400px) {
+            .platform-button {
+                width: 240px;
+                padding: 12px 24px;
+            }
+        }
+        
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .podcast-header,
+        .platform-button {
+            animation: fadeInUp 0.6s ease-out;
+        }
+        
+        .platform-button:nth-child(2) { animation-delay: 0.1s; }
+        .platform-button:nth-child(3) { animation-delay: 0.2s; }
+        .platform-button:nth-child(4) { animation-delay: 0.3s; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="podcast-header">
+            <div class="podcast-cover">
+                <img src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k=" alt="La Miniera della Morte Cover">
+            </div>
+            <h1 class="podcast-title">La Miniera della Morte</h1>
+            <p class="podcast-subtitle">con Antonio Francesco Climaci</p>
+            <p class="podcast-description">
+                Nel cuore selvaggio delle Alpi Cuneesi, tra pareti rocciose e boschi di larici, sorge una gola dimenticata: la Valle Fredda. Per oltre sessant'anni, le sue viscere hanno custodito un segreto che ha plasmato il paesaggio e le vite di chi vi abita.
+                <br><br>
+                A guidarci è la voce di un uomo nato 75 anni fa nella stessa stanza in cui lo intervistiamo. Attraverso i suoi ricordi lucidi e dolorosi ripercorriamo l'ascesa e il declino di quella che i locali chiamano ancora <em>Miniera della Morte</em>.
+            </p>
+        </div>
+        
+        <div class="links-container">
+            <a href="https://open.spotify.com/episode/2XmO0Kmf5QC9pG3ZX7PAWx?si=CjtZHI0sS1GrYTMbSj0KWg" class="platform-button spotify" target="_blank">
+                <svg class="platform-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.481.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.42 1.56-.301.421-1.02.599-1.562.3z" fill="#1DB954"/>
+                </svg>
+                Ascolta su Spotify
+            </a>
+            
+            <a href="https://music.amazon.it/podcasts/32b117e8-9a7d-47a5-ae6f-b82cc7f5d83e/la-miniera-della-morte-charm" class="platform-button amazon" target="_blank">
+                <svg class="platform-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M0 0h24v24H0z" fill="none"/>
+                    <path d="M13.527 8.954c.592.073 1.152.21 1.68.41.528.2.99.458 1.387.773.397.315.711.685.942 1.11.231.425.347.906.347 1.443 0 .537-.116 1.018-.347 1.443-.231.425-.545.795-.942 1.11-.397.315-.859.573-1.387.773-.528.2-1.088.337-1.68.41v1.5c0 .414-.336.75-.75.75s-.75-.336-.75-.75v-1.5c-.592-.073-1.152-.21-1.68-.41-.528-.2-.99-.458-1.387-.773-.397-.315-.711-.685-.942-1.11-.231-.425-.347-.906-.347-1.443s.116-1.018.347-1.443c.231-.425.545-.795.942-1.11.397-.315.859-.573 1.387-.773.528-.2 1.088-.337 1.68-.41v-1.5c0-.414.336-.75.75-.75s.75.336.75.75v1.5zm-1.5 1.09c-.414.05-.795.14-1.143.27-.348.13-.651.297-.909.5-.258.203-.462.443-.612.72-.15.277-.225.578-.225.903s.075.626.225.903c.15.277.354.517.612.72.258.203.561.37.909.5.348.13.729.22 1.143.27V10.044z" fill="#FF9F0A"/>
+                </svg>
+                Ascolta su Amazon Music
+            </a>
+            
+            <a href="https://podcasts.apple.com/it/podcast/la-miniera-della-morte-con-francesco-antonio-climaci/id1831987470?i=1000721189395&l=en-GB" class="platform-button apple" target="_blank">
+                <svg class="platform-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" fill="#A284F5"/>
+                </svg>
+                Ascolta su Apple Podcasts
+            </a>
+        </div>
+        
+        <div class="footer">
+            <p>Un podcast di <strong>Charm</strong> × <strong>chicubo.it</strong></p>
+        </div>
+    </div>
+
+    <script>
+        // Carica l'immagine della copertina
+        const img = document.querySelector('.podcast-cover img');
+        img.src = 'data:image/svg+xml;base64,' + btoa(`
+            <svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
+                <rect width="200" height="200" fill="#2c2c2c"/>
+                <text x="100" y="100" text-anchor="middle" dominant-baseline="middle" fill="#faf8f5" font-family="serif" font-size="16">Caricamento...</text>
+            </svg>
+        `);
+        
+        // Sostituisci con l'immagine reale una volta caricata
+        const realImg = new Image();
+        realImg.onload = function() {
+            img.src = this.src;
+        };
+        // Qui dovresti inserire il percorso della tua immagine
+        realImg.src = 'copertinadef.png';
+    </script>
+</body>
+</html>
