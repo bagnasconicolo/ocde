@@ -1,10 +1,35 @@
 {
   "name": "ocde-site",
   "version": "1.0.0",
+  "description": "OCDE project web interface for radiation measurement data visualization and geological site exploration. A science education platform by CHARM team at University of Turin.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
+  "keywords": [
+    "radiation",
+    "science-education",
+    "data-visualization",
+    "geological-sites",
+    "radioactivity",
+    "radiacode",
+    "mapping",
+    "university-research",
+    "science-communication",
+    "turin-university",
+    "charm-team",
+    "web-interface"
+  ],
+  "author": "CHARM Team - University of Turin",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bagnasconicolo/ocde.git"
+  },
+  "bugs": {
+    "url": "https://github.com/bagnasconicolo/ocde/issues"
+  },
+  "homepage": "https://github.com/bagnasconicolo/ocde#readme",
   "dependencies": {
     "express": "^4.19.2",
     "multer": "^1.4.5"
