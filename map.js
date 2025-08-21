@@ -300,7 +300,7 @@ window.addEventListener("load", () => {
         .map((r) => ({
           lat: +r[2],
           lon: +r[3],
-          dose: +r[5] * defaultFactor,
+          dose: +r[5], // RC-102 CSV files are already in µSv/h, no conversion needed
           cps: +r[6],
           energy: +r[7] || NaN,
           date: +r[0] || 0,
