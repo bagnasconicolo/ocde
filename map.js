@@ -204,7 +204,7 @@ window.addEventListener("load", () => {
         const factor = doseUnitFactor(unit, js.sv);
         const getDose = (m) => {
           if (m.dose_uSv_h != null) return +m.dose_uSv_h;
-          if (m.dose_uR_h != null) return +m.dose_uR_h * doseUnitFactor("ur");
+          if (m.dose_uR_h != null) return +m.dose_uR_h * 0.0096; // Convert µR/h to µSv/h
           return +(m.doseRate ?? m.dose ?? 0) * factor;
         };
         const points = markers
@@ -235,7 +235,7 @@ window.addEventListener("load", () => {
                 m.dose_uSv_h != null
                   ? +m.dose_uSv_h
                   : m.dose_uR_h != null
-                  ? +m.dose_uR_h * doseUnitFactor("ur")
+                  ? +m.dose_uR_h * 0.0096 // Convert µR/h to µSv/h
                   : +(m.doseRate ?? m.dose ?? 0) * factor;
               return {
                 lat: +m.lat,
