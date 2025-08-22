@@ -23,8 +23,8 @@
     "images": []
   },
   {
-    "id": "UR-001",
-    "code": "UR-001",
+    "id": "UR-002",
+    "code": "UR-002",
     "name": "Uraninite Crystal",
     "mineralType": "uraninite",
     "formula": "UO₂",
@@ -46,8 +46,8 @@
     "images": []
   },
   {
-    "id": "TB-001",
-    "code": "TB-001",
+    "id": "TB-003",
+    "code": "TB-003",
     "name": "Torbernite Specimen",
     "mineralType": "torbernite",
     "formula": "Cu(UO₂)₂(PO₄)₂·12H₂O",
@@ -69,8 +69,8 @@
     "images": []
   },
   {
-    "id": "AU-001",
-    "code": "AU-001",
+    "id": "AU-004",
+    "code": "AU-004",
     "name": "Autunite on Matrix",
     "mineralType": "autunite",
     "formula": "Ca(UO₂)₂(PO₄)₂·10-12H₂O",
@@ -92,8 +92,8 @@
     "images": []
   },
   {
-    "id": "UO-002",
-    "code": "UO-002",
+    "id": "UO-005",
+    "code": "UO-005",
     "name": "Pitchblende Ore",
     "mineralType": "uranium-ore",
     "formula": "UO₂ (massive variety)",
@@ -115,8 +115,8 @@
     "images": []
   },
   {
-    "id": "AU-002",
-    "code": "AU-002",
+    "id": "AU-006",
+    "code": "AU-006",
     "name": "Crystalline Autunite",
     "mineralType": "autunite",
     "formula": "Ca(UO₂)₂(PO₄)₂·10-12H₂O",

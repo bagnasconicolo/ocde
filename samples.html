@@ -706,10 +706,10 @@
 
       const initials = mineralTypes[currentMineralType].initials;
       
-      // Find the highest existing number for this mineral type
+      // Find the highest existing number across ALL samples (global sequential)
       let maxNumber = 0;
       samples.forEach(sample => {
-        if (sample.code && sample.code.startsWith(initials + '-')) {
+        if (sample.code && sample.code.includes('-')) {
           const numberPart = parseInt(sample.code.split('-')[1]);
           if (!isNaN(numberPart) && numberPart > maxNumber) {
             maxNumber = numberPart;
