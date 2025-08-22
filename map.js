@@ -273,7 +273,7 @@ window.addEventListener("load", () => {
           .map((row) => ({
             lat: +row[parsed.meta.fields[latIdx]],
             lon: +row[parsed.meta.fields[lonIdx]],
-            dose: +(row[parsed.meta.fields[doseIdx]] ?? 0), // CSV files from RC-102 are already in µSv/h
+            dose: +(row[parsed.meta.fields[doseIdx]] ?? 0) * 0.0096, // CSV files from RC-102 are in µR/h, convert to µSv/h
             cps: +(row[parsed.meta.fields[cpsIdx]] ?? 0),
             energy: +row.energy || +row.energy_ev || NaN,
             date: +(row[parsed.meta.fields[dateIdx]] ?? 0),
@@ -300,7 +300,7 @@ window.addEventListener("load", () => {
         .map((r) => ({
           lat: +r[2],
           lon: +r[3],
-          dose: +r[5], // RC-102 CSV files are already in µSv/h
+          dose: +r[5] * 0.0096, // RC-102 CSV files are in µR/h, convert to µSv/h
           cps: +r[6],
           energy: +r[7] || NaN,
           date: +r[0] || 0,

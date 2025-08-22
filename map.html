@@ -783,7 +783,7 @@
               .map((r) => {
                 const lat = +r[2];
                 const lon = +r[3];
-                const dose = +r[5]; // RC-102 CSV files are already in µSv/h
+                const dose = +r[5] * 0.0096; // RC-102 CSV files are in µR/h, convert to µSv/h
                 const cps = +r[6];
                 let date = 0;
                 const ts = Number(r[0]);
