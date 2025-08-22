@@ -1266,6 +1266,25 @@
           updateSiteCircles();
         };
 
+        // Function to focus on a specific site from URL parameter
+        const focusOnSite = (siteId) => {
+          const marker = siteMarkers[siteId];
+          if (marker) {
+            // Zoom to site and open popup
+            map.setView(marker.getLatLng(), 16);
+            marker.openPopup();
+            
+            // Highlight the site in the list
+            const checkbox = document.querySelector(`input[data-id="${siteId}"]`);
+            if (checkbox && !checkbox.checked) {
+              checkbox.checked = true;
+              checkbox.dispatchEvent(new Event('change'));
+            }
+          } else {
+            console.warn(`Site with ID '${siteId}' not found`);
+          }
+        };
+
         /* ------------------ MAIN LOAD ------------------ */
         (async () => {
           const files = await fetchTrackList();
@@ -1615,7 +1634,14 @@
             endTimeInput.valueAsNumber = globalMaxDate * 1000;
           }
           drawDots();
-          loadSites();
+          loadSites().then(() => {
+            // Check for site parameter in URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const siteParam = urlParams.get('site');
+            if (siteParam) {
+              focusOnSite(siteParam);
+            }
+          });
         })();
 
         /* ------------------ DOT RENDER ------------------ */
