@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mineral Samples - OCDE</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'glass': 'rgba(255, 255, 255, 0.1)',
+            'glass-dark': 'rgba(0, 0, 0, 0.3)',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .glass-panel {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    .glass-dark {
+      background: rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .mineral-card {
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .mineral-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-gray-900 via-blue-900 to-gray-800 text-white min-h-screen">
+  
+  <!-- Navigation -->
+  <div id="nav-container"></div>
+
+  <!-- Main Content -->
+  <div class="container mx-auto px-4 py-6">
+    
+    <!-- Header -->
+    <div class="text-center mb-8">
+      <h1 class="text-4xl font-bold mb-4 bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 bg-clip-text text-transparent">
+        Mineral Sample Collection
+      </h1>
+      <p class="text-gray-300 text-lg">Radioactive minerals and uranium ore specimens collected during field research</p>
+    </div>
+
+    <!-- Controls -->
+    <div class="glass-dark rounded-lg p-4 mb-6">
+      <div class="flex flex-wrap gap-4 items-center justify-between">
+        
+        <!-- Filter -->
+        <div class="flex items-center gap-2">
+          <label for="mineralFilter" class="text-gray-300">Filter by mineral:</label>
+          <select id="mineralFilter" class="bg-gray-700 border border-gray-600 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500">
+            <option value="">All minerals</option>
+            <option value="uranium-ore">Uranium ore</option>
+            <option value="uraninite">Uraninite</option>
+            <option value="torbernite">Torbernite</option>
+            <option value="autunite">Autunite</option>
+          </select>
+        </div>
+
+        <!-- View Toggle -->
+        <div class="flex items-center gap-2">
+          <button id="gridViewBtn" class="px-3 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 transition-colors">
+            Grid View
+          </button>
+          <button id="listViewBtn" class="px-3 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors">
+            List View
+          </button>
+        </div>
+
+        <!-- Add Sample Button -->
+        <button id="addSampleBtn" class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors">
+          + Add Sample
+        </button>
+        
+      </div>
+    </div>
+
+    <!-- Sample Gallery -->
+    <div id="samplesContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <!-- Sample cards will be populated here -->
+    </div>
+
+    <!-- Empty State -->
+    <div id="emptyState" class="text-center py-12 hidden">
+      <div class="text-gray-400 text-6xl mb-4">🔬</div>
+      <h3 class="text-xl font-semibold text-gray-300 mb-2">No samples found</h3>
+      <p class="text-gray-400">Add your first mineral sample to get started</p>
+    </div>
+
+  </div>
+
+  <!-- Sample Modal -->
+  <div id="sampleModal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 hidden z-50">
+    <div class="glass-dark rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+      
+      <!-- Modal Header -->
+      <div class="p-6 border-b border-gray-700">
+        <div class="flex justify-between items-center">
+          <h2 id="modalTitle" class="text-2xl font-bold text-yellow-400">Sample Details</h2>
+          <button id="closeModal" class="text-gray-400 hover:text-white text-2xl">&times;</button>
+        </div>
+      </div>
+
+      <!-- Modal Content -->
+      <div class="p-6">
+        
+        <!-- Tabs -->
+        <div class="flex border-b border-gray-700 mb-6">
+          <button class="tab-button px-4 py-2 border-b-2 border-yellow-500 text-yellow-400" data-tab="overview">
+            Overview
+          </button>
+          <button class="tab-button px-4 py-2 border-b-2 border-transparent text-gray-400 hover:text-white" data-tab="technical">
+            Technical Data
+          </button>
+          <button class="tab-button px-4 py-2 border-b-2 border-transparent text-gray-400 hover:text-white" data-tab="location">
+            Collection Info
+          </button>
+        </div>
+
+        <!-- Tab Content -->
+        <div id="overviewTab" class="tab-content">
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            
+            <!-- Images -->
+            <div>
+              <h3 class="text-lg font-semibold mb-3 text-yellow-400">Images</h3>
+              <div id="sampleImages" class="grid grid-cols-2 gap-2">
+                <!-- Images will be populated here -->
+              </div>
+            </div>
+
+            <!-- Basic Info -->
+            <div>
+              <h3 class="text-lg font-semibold mb-3 text-yellow-400">Basic Information</h3>
+              <div class="space-y-3">
+                <div>
+                  <label class="text-gray-400 text-sm">Mineral Type:</label>
+                  <div id="modalMineralType" class="text-white font-medium"></div>
+                </div>
+                <div>
+                  <label class="text-gray-400 text-sm">Chemical Formula:</label>
+                  <div id="modalFormula" class="text-white font-mono"></div>
+                </div>
+                <div>
+                  <label class="text-gray-400 text-sm">Description:</label>
+                  <div id="modalDescription" class="text-gray-200"></div>
+                </div>
+                <div>
+                  <label class="text-gray-400 text-sm">Collection Date:</label>
+                  <div id="modalDate" class="text-white"></div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <div id="technicalTab" class="tab-content hidden">
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            
+            <!-- Radiation Data -->
+            <div>
+              <h3 class="text-lg font-semibold mb-3 text-yellow-400">Radiation Properties</h3>
+              
+              <!-- Gamma Radiation -->
+              <div class="mb-4">
+                <h4 class="text-md font-medium mb-2 text-blue-300">Gamma Radiation</h4>
+                <div class="space-y-2 pl-3">
+                  <div>
+                    <label class="text-gray-400 text-sm">Activity (CPM):</label>
+                    <div id="modalGammaActivity" class="text-white font-medium"></div>
+                  </div>
+                  <div>
+                    <label class="text-gray-400 text-sm">Dose Rate (µSv/h):</label>
+                    <div id="modalGammaDoseRate" class="text-white font-medium"></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Alpha + Beta Radiation -->
+              <div class="mb-4">
+                <h4 class="text-md font-medium mb-2 text-red-300">Alpha + Beta Radiation</h4>
+                <div class="space-y-2 pl-3">
+                  <div>
+                    <label class="text-gray-400 text-sm">Activity (CPM):</label>
+                    <div id="modalAlphaBetaActivity" class="text-white font-medium"></div>
+                  </div>
+                  <div>
+                    <label class="text-gray-400 text-sm">Dose Rate (µSv/h):</label>
+                    <div id="modalAlphaBetaDoseRate" class="text-white font-medium"></div>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label class="text-gray-400 text-sm">Primary Isotopes:</label>
+                <div id="modalIsotopes" class="text-white"></div>
+              </div>
+            </div>
+
+            <!-- Physical Properties -->
+            <div>
+              <h3 class="text-lg font-semibold mb-3 text-yellow-400">Physical Properties</h3>
+              <div class="space-y-3">
+                <div>
+                  <label class="text-gray-400 text-sm">Weight (g):</label>
+                  <div id="modalWeight" class="text-white font-medium"></div>
+                </div>
+                <div>
+                  <label class="text-gray-400 text-sm">Dimensions (mm):</label>
+                  <div id="modalDimensions" class="text-white"></div>
+                </div>
+                <div>
+                  <label class="text-gray-400 text-sm">Color:</label>
+                  <div id="modalColor" class="text-white"></div>
+                </div>
+                <div>
+                  <label class="text-gray-400 text-sm">Crystal System:</label>
+                  <div id="modalCrystalSystem" class="text-white"></div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <div id="locationTab" class="tab-content hidden">
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            
+            <!-- Collection Location -->
+            <div>
+              <h3 class="text-lg font-semibold mb-3 text-yellow-400">Collection Location</h3>
+              <div class="space-y-3">
+                <div>
+                  <label class="text-gray-400 text-sm">Location:</label>
+                  <div id="modalLocation" class="text-white"></div>
+                </div>
+                <div>
+                  <label class="text-gray-400 text-sm">Coordinates:</label>
+                  <div id="modalCoordinates" class="text-white font-mono"></div>
+                </div>
+                <div>
+                  <label class="text-gray-400 text-sm">Geology:</label>
+                  <div id="modalGeology" class="text-white"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Collection Notes -->
+            <div>
+              <h3 class="text-lg font-semibold mb-3 text-yellow-400">Collection Notes</h3>
+              <div id="modalNotes" class="text-gray-200 bg-gray-800 p-3 rounded-md"></div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Add/Edit Sample Modal -->
+  <div id="editSampleModal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 hidden z-50">
+    <div class="glass-dark rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      
+      <!-- Modal Header -->
+      <div class="p-6 border-b border-gray-700">
+        <div class="flex justify-between items-center">
+          <h2 id="editModalTitle" class="text-2xl font-bold text-yellow-400">Add New Sample</h2>
+          <button id="closeEditModal" class="text-gray-400 hover:text-white text-2xl">&times;</button>
+        </div>
+      </div>
+
+      <!-- Edit Form -->
+      <form id="sampleForm" class="p-6 space-y-4">
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          
+          <div>
+            <label for="sampleName" class="block text-sm font-medium text-gray-300 mb-1">Sample Name</label>
+            <input type="text" id="sampleName" name="name" required
+                   class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-yellow-500">
+          </div>
+          
+          <div>
+            <label for="sampleMineralType" class="block text-sm font-medium text-gray-300 mb-1">Mineral Type</label>
+            <select id="sampleMineralType" name="mineralType" required
+                    class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-yellow-500">
+              <option value="">Select mineral</option>
+              <option value="uranium-ore">Uranium ore</option>
+              <option value="uraninite">Uraninite</option>
+              <option value="torbernite">Torbernite</option>
+              <option value="autunite">Autunite</option>
+            </select>
+          </div>
+
+        </div>
+
+        <div>
+          <label for="sampleDescription" class="block text-sm font-medium text-gray-300 mb-1">Description</label>
+          <textarea id="sampleDescription" name="description" rows="3"
+                    class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-yellow-500"></textarea>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          
+          <div>
+            <label for="sampleFormula" class="block text-sm font-medium text-gray-300 mb-1">Chemical Formula</label>
+            <input type="text" id="sampleFormula" name="formula"
+                   class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-yellow-500">
+          </div>
+          
+          <div>
+            <label for="sampleDate" class="block text-sm font-medium text-gray-300 mb-1">Collection Date</label>
+            <input type="date" id="sampleDate" name="date"
+                   class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-yellow-500">
+          </div>
+
+        </div>
+
+        <!-- Radiation Measurements -->
+        <div>
+          <h3 class="text-lg font-semibold mb-3 text-yellow-400">Radiation Measurements</h3>
+          
+          <!-- Gamma Radiation -->
+          <div class="mb-4">
+            <h4 class="text-md font-medium mb-2 text-blue-300">Gamma Radiation</h4>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label for="sampleGammaActivity" class="block text-sm font-medium text-gray-300 mb-1">Activity (CPM)</label>
+                <input type="number" id="sampleGammaActivity" name="gammaActivity" step="0.1"
+                       class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-yellow-500">
+              </div>
+              <div>
+                <label for="sampleGammaDoseRate" class="block text-sm font-medium text-gray-300 mb-1">Dose Rate (µSv/h)</label>
+                <input type="number" id="sampleGammaDoseRate" name="gammaDoseRate" step="0.001"
+                       class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-yellow-500">
+              </div>
+            </div>
+          </div>
+
+          <!-- Alpha + Beta Radiation -->
+          <div class="mb-4">
+            <h4 class="text-md font-medium mb-2 text-red-300">Alpha + Beta Radiation</h4>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label for="sampleAlphaBetaActivity" class="block text-sm font-medium text-gray-300 mb-1">Activity (CPM)</label>
+                <input type="number" id="sampleAlphaBetaActivity" name="alphaBetaActivity" step="0.1"
+                       class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-yellow-500">
+              </div>
+              <div>
+                <label for="sampleAlphaBetaDoseRate" class="block text-sm font-medium text-gray-300 mb-1">Dose Rate (µSv/h)</label>
+                <input type="number" id="sampleAlphaBetaDoseRate" name="alphaBetaDoseRate" step="0.001"
+                       class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-yellow-500">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-1 gap-4">
+          <div>
+            <label for="sampleWeight" class="block text-sm font-medium text-gray-300 mb-1">Weight (g)</label>
+            <input type="number" id="sampleWeight" name="weight" step="0.1"
+                   class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-yellow-500">
+          </div>
+        </div>
+
+        <div>
+          <label for="sampleLocation" class="block text-sm font-medium text-gray-300 mb-1">Collection Location</label>
+          <input type="text" id="sampleLocation" name="location"
+                 class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-yellow-500">
+        </div>
+
+        <div>
+          <label for="sampleNotes" class="block text-sm font-medium text-gray-300 mb-1">Collection Notes</label>
+          <textarea id="sampleNotes" name="notes" rows="3"
+                    class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-yellow-500"></textarea>
+        </div>
+
+        <div class="flex justify-end gap-3 pt-4">
+          <button type="button" id="cancelEditBtn" class="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors">
+            Cancel
+          </button>
+          <button type="submit" class="px-4 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 transition-colors">
+            Save Sample
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // Load navigation
+    fetch('nav.html')
+      .then(response => response.text())
+      .then(html => {
+        document.getElementById('nav-container').innerHTML = html;
+      });
+
+    // Sample data and functionality
+    let samples = [];
+    let currentView = 'grid';
+
+    // Initialize page
+    document.addEventListener('DOMContentLoaded', function() {
+      loadSamples();
+      setupEventListeners();
+    });
+
+    function setupEventListeners() {
+      // View toggle
+      document.getElementById('gridViewBtn').addEventListener('click', () => setView('grid'));
+      document.getElementById('listViewBtn').addEventListener('click', () => setView('list'));
+      
+      // Filter
+      document.getElementById('mineralFilter').addEventListener('change', filterSamples);
+      
+      // Add sample
+      document.getElementById('addSampleBtn').addEventListener('click', () => openEditModal());
+      
+      // Modal controls
+      document.getElementById('closeModal').addEventListener('click', closeSampleModal);
+      document.getElementById('closeEditModal').addEventListener('click', closeEditModal);
+      document.getElementById('cancelEditBtn').addEventListener('click', closeEditModal);
+      
+      // Form submission
+      document.getElementById('sampleForm').addEventListener('submit', saveSample);
+      
+      // Tab switching
+      document.querySelectorAll('.tab-button').forEach(btn => {
+        btn.addEventListener('click', (e) => switchTab(e.target.dataset.tab));
+      });
+      
+      // Close modals on outside click
+      document.getElementById('sampleModal').addEventListener('click', (e) => {
+        if (e.target === e.currentTarget) closeSampleModal();
+      });
+      document.getElementById('editSampleModal').addEventListener('click', (e) => {
+        if (e.target === e.currentTarget) closeEditModal();
+      });
+    }
+
+    async function loadSamples() {
+      try {
+        const response = await fetch('/api/samples');
+        if (response.ok) {
+          samples = await response.json();
+        } else {
+          samples = [];
+        }
+        renderSamples();
+      } catch (error) {
+        console.warn('Failed to load samples, using empty array');
+        samples = [];
+        renderSamples();
+      }
+    }
+
+    function renderSamples() {
+      const container = document.getElementById('samplesContainer');
+      const emptyState = document.getElementById('emptyState');
+      
+      if (samples.length === 0) {
+        container.classList.add('hidden');
+        emptyState.classList.remove('hidden');
+        return;
+      }
+      
+      container.classList.remove('hidden');
+      emptyState.classList.add('hidden');
+      
+      container.innerHTML = samples.map(sample => createSampleCard(sample)).join('');
+      
+      // Add click listeners to cards
+      document.querySelectorAll('.sample-card').forEach(card => {
+        card.addEventListener('click', () => {
+          const sampleId = card.dataset.sampleId;
+          const sample = samples.find(s => s.id === sampleId);
+          if (sample) openSampleModal(sample);
+        });
+      });
+    }
+
+    function createSampleCard(sample) {
+      const primaryImage = sample.images && sample.images.length > 0 ? sample.images[0] : null;
+      const mineralColors = {
+        'uranium-ore': 'from-yellow-600 to-orange-600',
+        'uraninite': 'from-gray-700 to-black',
+        'torbernite': 'from-green-600 to-emerald-700',
+        'autunite': 'from-yellow-500 to-lime-500'
+      };
+      
+      return `
+        <div class="mineral-card sample-card glass-dark rounded-lg overflow-hidden cursor-pointer" data-sample-id="${sample.id}">
+          ${primaryImage ? `
+            <div class="h-48 overflow-hidden">
+              <img src="${primaryImage}" alt="${sample.name}" class="w-full h-full object-cover">
+            </div>
+          ` : `
+            <div class="h-48 bg-gradient-to-br ${mineralColors[sample.mineralType] || 'from-gray-600 to-gray-800'} flex items-center justify-center">
+              <div class="text-6xl opacity-50">🔬</div>
+            </div>
+          `}
+          
+          <div class="p-4">
+            <h3 class="text-lg font-semibold text-yellow-400 mb-1">${sample.name}</h3>
+            <p class="text-gray-300 text-sm capitalize mb-2">${sample.mineralType.replace('-', ' ')}</p>
+            
+            <div class="space-y-1 text-xs text-gray-400">
+              ${sample.formula ? `<div><span class="font-mono">${sample.formula}</span></div>` : ''}
+              ${sample.gammaActivity ? `<div>γ: ${sample.gammaActivity} CPM</div>` : ''}
+              ${sample.alphaBetaActivity ? `<div>α+β: ${sample.alphaBetaActivity} CPM</div>` : ''}
+              ${sample.location ? `<div>📍 ${sample.location}</div>` : ''}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function filterSamples() {
+      const filter = document.getElementById('mineralFilter').value;
+      const cards = document.querySelectorAll('.sample-card');
+      
+      cards.forEach(card => {
+        const sampleId = card.dataset.sampleId;
+        const sample = samples.find(s => s.id === sampleId);
+        
+        if (!filter || sample.mineralType === filter) {
+          card.style.display = 'block';
+        } else {
+          card.style.display = 'none';
+        }
+      });
+    }
+
+    function setView(view) {
+      currentView = view;
+      const container = document.getElementById('samplesContainer');
+      const gridBtn = document.getElementById('gridViewBtn');
+      const listBtn = document.getElementById('listViewBtn');
+      
+      if (view === 'grid') {
+        container.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6';
+        gridBtn.classList.add('bg-yellow-600');
+        gridBtn.classList.remove('bg-gray-600');
+        listBtn.classList.add('bg-gray-600');
+        listBtn.classList.remove('bg-yellow-600');
+      } else {
+        container.className = 'space-y-4';
+        listBtn.classList.add('bg-yellow-600');
+        listBtn.classList.remove('bg-gray-600');
+        gridBtn.classList.add('bg-gray-600');
+        gridBtn.classList.remove('bg-yellow-600');
+      }
+    }
+
+    function openSampleModal(sample) {
+      document.getElementById('modalTitle').textContent = sample.name;
+      document.getElementById('modalMineralType').textContent = sample.mineralType.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase());
+      document.getElementById('modalFormula').textContent = sample.formula || 'Not specified';
+      document.getElementById('modalDescription').textContent = sample.description || 'No description provided';
+      document.getElementById('modalDate').textContent = sample.date ? new Date(sample.date).toLocaleDateString() : 'Not recorded';
+      document.getElementById('modalGammaActivity').textContent = sample.gammaActivity ? `${sample.gammaActivity} CPM` : 'Not measured';
+      document.getElementById('modalGammaDoseRate').textContent = sample.gammaDoseRate ? `${sample.gammaDoseRate} µSv/h` : 'Not measured';
+      document.getElementById('modalAlphaBetaActivity').textContent = sample.alphaBetaActivity ? `${sample.alphaBetaActivity} CPM` : 'Not measured';
+      document.getElementById('modalAlphaBetaDoseRate').textContent = sample.alphaBetaDoseRate ? `${sample.alphaBetaDoseRate} µSv/h` : 'Not measured';
+      document.getElementById('modalIsotopes').textContent = sample.isotopes || 'Not analyzed';
+      document.getElementById('modalWeight').textContent = sample.weight ? `${sample.weight} g` : 'Not weighed';
+      document.getElementById('modalDimensions').textContent = sample.dimensions || 'Not measured';
+      document.getElementById('modalColor').textContent = sample.color || 'Not recorded';
+      document.getElementById('modalCrystalSystem').textContent = sample.crystalSystem || 'Not determined';
+      document.getElementById('modalLocation').textContent = sample.location || 'Location not recorded';
+      document.getElementById('modalCoordinates').textContent = sample.coordinates || 'Coordinates not recorded';
+      document.getElementById('modalGeology').textContent = sample.geology || 'Geological context not recorded';
+      document.getElementById('modalNotes').textContent = sample.notes || 'No collection notes';
+      
+      // Populate images
+      const imagesContainer = document.getElementById('sampleImages');
+      if (sample.images && sample.images.length > 0) {
+        imagesContainer.innerHTML = sample.images.map(img => `
+          <img src="${img}" alt="${sample.name}" class="w-full h-32 object-cover rounded-md cursor-pointer hover:opacity-80 transition-opacity">
+        `).join('');
+      } else {
+        imagesContainer.innerHTML = '<div class="text-gray-400 text-center py-8 col-span-2">No images available</div>';
+      }
+      
+      document.getElementById('sampleModal').classList.remove('hidden');
+    }
+
+    function closeSampleModal() {
+      document.getElementById('sampleModal').classList.add('hidden');
+    }
+
+    function openEditModal(sample = null) {
+      const modal = document.getElementById('editSampleModal');
+      const title = document.getElementById('editModalTitle');
+      const form = document.getElementById('sampleForm');
+      
+      if (sample) {
+        title.textContent = 'Edit Sample';
+        // Populate form with sample data
+        Object.keys(sample).forEach(key => {
+          const input = form.querySelector(`[name="${key}"]`);
+          if (input) input.value = sample[key] || '';
+        });
+      } else {
+        title.textContent = 'Add New Sample';
+        form.reset();
+      }
+      
+      modal.classList.remove('hidden');
+    }
+
+    function closeEditModal() {
+      document.getElementById('editSampleModal').classList.add('hidden');
+    }
+
+    async function saveSample(e) {
+      e.preventDefault();
+      
+      const formData = new FormData(e.target);
+      const sampleData = Object.fromEntries(formData.entries());
+      sampleData.id = Date.now().toString(); // Simple ID generation
+      
+      try {
+        const response = await fetch('/api/samples', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(sampleData)
+        });
+        
+        if (response.ok) {
+          await loadSamples(); // Reload samples
+          closeEditModal();
+        } else {
+          alert('Failed to save sample');
+        }
+      } catch (error) {
+        console.error('Error saving sample:', error);
+        alert('Failed to save sample');
+      }
+    }
+
+    function switchTab(tabName) {
+      // Update tab buttons
+      document.querySelectorAll('.tab-button').forEach(btn => {
+        btn.classList.remove('border-yellow-500', 'text-yellow-400');
+        btn.classList.add('border-transparent', 'text-gray-400');
+      });
+      document.querySelector(`[data-tab="${tabName}"]`).classList.remove('border-transparent', 'text-gray-400');
+      document.querySelector(`[data-tab="${tabName}"]`).classList.add('border-yellow-500', 'text-yellow-400');
+      
+      // Show/hide tab content
+      document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.add('hidden');
+      });
+      document.getElementById(`${tabName}Tab`).classList.remove('hidden');
+    }
+  </script>
+</body>
+</html>

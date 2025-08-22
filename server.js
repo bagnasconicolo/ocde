@@ -25,6 +25,7 @@ const ensureFile = (file, fallback) => {
 };
 ensureFile('sites.json', '[]');
 ensureFile('track_index.json', '[]');
+ensureFile('samples.json', '[]');
 
 app.use(express.json());
 // No session or authentication required
@@ -131,6 +132,28 @@ app.delete('/api/tracks', requireAuth, (req, res) => {
   res.json({ ok: true });
 });
 
+/* ----- SAMPLE ENDPOINTS ----- */
+app.get('/api/samples', requireAuth, (req, res) => {
+  res.json(readJson('samples.json'));
+});
+
+app.post('/api/samples', requireAuth, (req, res) => {
+  const samples = readJson('samples.json');
+  const sample = req.body;
+  const idx = samples.findIndex((s) => s.id === sample.id);
+  if (idx >= 0) samples[idx] = sample; else samples.push(sample);
+  writeJson('samples.json', samples);
+  res.json({ ok: true });
+});
+
+app.delete('/api/samples/:id', requireAuth, (req, res) => {
+  const id = req.params.id;
+  let samples = readJson('samples.json');
+  samples = samples.filter((s) => s.id !== id);
+  writeJson('samples.json', samples);
+  res.json({ ok: true });
+});
+
 /* ----- IMAGE UPLOAD ----- */
 const imageStorage = multer({ dest: path.join(DATA_DIR, 'images') });
 app.post('/api/images/:siteId', requireAuth, imageStorage.single('image'), (req, res) => {
@@ -159,6 +182,37 @@ app.delete('/api/images/:siteId/:imageName', requireAuth, (req, res) => {
       site.images.splice(idx, 1);
       if (Array.isArray(site.captions)) site.captions.splice(idx, 1);
       writeJson('sites.json', sites);
+    }
+  }
+  res.json({ ok: true });
+});
+
+/* ----- SAMPLE IMAGE UPLOAD ----- */
+app.post('/api/samples/:sampleId/images', requireAuth, imageStorage.single('image'), (req, res) => {
+  const sampleId = req.params.sampleId;
+  const dir = path.join(DATA_DIR, 'images', 'samples', sampleId);
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  const ext = path.extname(req.file.originalname);
+  const dest = path.join(dir, req.file.filename + ext);
+  fs.renameSync(req.file.path, dest);
+  res.json({ ok: true, file: `data/images/samples/${sampleId}/${path.basename(dest)}` });
+});
+
+app.delete('/api/samples/:sampleId/images/:imageName', requireAuth, (req, res) => {
+  const { sampleId, imageName } = req.params;
+  const filename = path.basename(imageName);
+  const filePath = path.join(DATA_DIR, 'images', 'samples', sampleId, filename);
+  if (fs.existsSync(filePath)) {
+    fs.unlinkSync(filePath);
+  }
+  const samples = readJson('samples.json');
+  const sample = samples.find((s) => s.id === sampleId);
+  if (sample && Array.isArray(sample.images)) {
+    const rel = `data/images/samples/${sampleId}/${filename}`;
+    const idx = sample.images.indexOf(rel);
+    if (idx >= 0) {
+      sample.images.splice(idx, 1);
+      writeJson('samples.json', samples);
     }
   }
   res.json({ ok: true });
