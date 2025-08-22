@@ -286,8 +286,14 @@
       <!-- Edit Form -->
       <form id="sampleForm" class="p-6 space-y-4">
         
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           
+          <div>
+            <label for="sampleCode" class="block text-sm font-medium text-gray-300 mb-1">Specimen Code</label>
+            <input type="text" id="sampleCode" name="code" readonly
+                   class="w-full px-3 py-2 bg-gray-600 border border-gray-600 rounded-md text-gray-300 cursor-not-allowed">
+          </div>
+
           <div>
             <label for="sampleName" class="block text-sm font-medium text-gray-300 mb-1">Sample Name</label>
             <input type="text" id="sampleName" name="name" required
@@ -378,9 +384,11 @@
         </div>
 
         <div>
-          <label for="sampleLocation" class="block text-sm font-medium text-gray-300 mb-1">Collection Location</label>
-          <input type="text" id="sampleLocation" name="location"
-                 class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-yellow-500">
+          <label for="sampleSite" class="block text-sm font-medium text-gray-300 mb-1">Collection Site</label>
+          <select id="sampleSite" name="siteId" required
+                  class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-yellow-500">
+            <option value="">Select collection site</option>
+          </select>
         </div>
 
         <div>
@@ -412,12 +420,22 @@
 
     // Sample data and functionality
     let samples = [];
+    let sites = [];
     let currentView = 'grid';
+    
+    // Mineral type configurations
+    const mineralTypes = {
+      'uranium-ore': { initials: 'UO', formula: 'UO₂ (with gangue minerals)' },
+      'uraninite': { initials: 'UR', formula: 'UO₂' },
+      'torbernite': { initials: 'TB', formula: 'Cu(UO₂)₂(PO₄)₂·12H₂O' },
+      'autunite': { initials: 'AU', formula: 'Ca(UO₂)₂(PO₄)₂·10-12H₂O' }
+    };
 
     // Initialize page
     document.addEventListener('DOMContentLoaded', function() {
-      loadSamples();
-      setupEventListeners();
+      Promise.all([loadSamples(), loadSites()]).then(() => {
+        setupEventListeners();
+      });
     });
 
     function setupEventListeners() {
@@ -438,6 +456,20 @@
       
       // Form submission
       document.getElementById('sampleForm').addEventListener('submit', saveSample);
+      
+      // Mineral type selection - auto-fill formula and regenerate code
+      document.getElementById('sampleMineralType').addEventListener('change', function(e) {
+        const mineralType = e.target.value;
+        const formulaInput = document.getElementById('sampleFormula');
+        if (mineralType && mineralTypes[mineralType]) {
+          formulaInput.value = mineralTypes[mineralType].formula;
+          // Only regenerate code for new samples (not editing existing)
+          const codeInput = document.getElementById('sampleCode');
+          if (!codeInput.value || codeInput.value.includes('NEW-')) {
+            generateSpecimenCode(mineralType);
+          }
+        }
+      });
       
       // Tab switching
       document.querySelectorAll('.tab-button').forEach(btn => {
@@ -466,6 +498,20 @@
         console.warn('Failed to load samples, using empty array');
         samples = [];
         renderSamples();
+      }
+    }
+
+    async function loadSites() {
+      try {
+        const response = await fetch('/api/sites');
+        if (response.ok) {
+          sites = await response.json();
+        } else {
+          sites = [];
+        }
+      } catch (error) {
+        console.warn('Failed to load sites, using empty array');
+        sites = [];
       }
     }
 
@@ -523,7 +569,7 @@
               ${sample.formula ? `<div><span class="font-mono">${sample.formula}</span></div>` : ''}
               ${sample.gammaActivity ? `<div>γ: ${sample.gammaActivity} CPM</div>` : ''}
               ${sample.alphaBetaActivity ? `<div>α+β: ${sample.alphaBetaActivity} CPM</div>` : ''}
-              ${sample.location ? `<div>📍 ${sample.location}</div>` : ''}
+              ${sample.siteId ? `<div>📍 ${sites.find(s => s.id === sample.siteId)?.title || sample.siteId}</div>` : (sample.location ? `<div>📍 ${sample.location}</div>` : '')}
             </div>
           </div>
         </div>
@@ -582,7 +628,18 @@
       document.getElementById('modalDimensions').textContent = sample.dimensions || 'Not measured';
       document.getElementById('modalColor').textContent = sample.color || 'Not recorded';
       document.getElementById('modalCrystalSystem').textContent = sample.crystalSystem || 'Not determined';
-      document.getElementById('modalLocation').textContent = sample.location || 'Location not recorded';
+      // Populate location with clickable site link
+      const locationDiv = document.getElementById('modalLocation');
+      if (sample.siteId) {
+        const site = sites.find(s => s.id === sample.siteId);
+        if (site) {
+          locationDiv.innerHTML = `<a href="map.html?site=${site.id}" target="_blank" class="text-blue-400 hover:text-blue-300 underline">${site.title || site.id}</a>`;
+        } else {
+          locationDiv.textContent = `Site ${sample.siteId} (details not found)`;
+        }
+      } else {
+        locationDiv.textContent = sample.location || 'Location not recorded';
+      }
       document.getElementById('modalCoordinates').textContent = sample.coordinates || 'Coordinates not recorded';
       document.getElementById('modalGeology').textContent = sample.geology || 'Geological context not recorded';
       document.getElementById('modalNotes').textContent = sample.notes || 'No collection notes';
@@ -609,6 +666,16 @@
       const title = document.getElementById('editModalTitle');
       const form = document.getElementById('sampleForm');
       
+      // Populate site dropdown
+      const siteSelect = document.getElementById('sampleSite');
+      siteSelect.innerHTML = '<option value="">Select collection site</option>';
+      sites.forEach(site => {
+        const option = document.createElement('option');
+        option.value = site.id;
+        option.textContent = site.title || `Site ${site.id}`;
+        siteSelect.appendChild(option);
+      });
+      
       if (sample) {
         title.textContent = 'Edit Sample';
         // Populate form with sample data
@@ -619,6 +686,8 @@
       } else {
         title.textContent = 'Add New Sample';
         form.reset();
+        // Generate specimen code for new samples
+        generateSpecimenCode();
       }
       
       modal.classList.remove('hidden');
@@ -628,12 +697,51 @@
       document.getElementById('editSampleModal').classList.add('hidden');
     }
 
+    function generateSpecimenCode(mineralType = null) {
+      const currentMineralType = mineralType || document.getElementById('sampleMineralType').value;
+      if (!currentMineralType || !mineralTypes[currentMineralType]) {
+        document.getElementById('sampleCode').value = 'NEW-000';
+        return;
+      }
+
+      const initials = mineralTypes[currentMineralType].initials;
+      
+      // Find the highest existing number for this mineral type
+      let maxNumber = 0;
+      samples.forEach(sample => {
+        if (sample.code && sample.code.startsWith(initials + '-')) {
+          const numberPart = parseInt(sample.code.split('-')[1]);
+          if (!isNaN(numberPart) && numberPart > maxNumber) {
+            maxNumber = numberPart;
+          }
+        }
+      });
+
+      const nextNumber = (maxNumber + 1).toString().padStart(3, '0');
+      document.getElementById('sampleCode').value = `${initials}-${nextNumber}`;
+    }
+
     async function saveSample(e) {
       e.preventDefault();
       
       const formData = new FormData(e.target);
       const sampleData = Object.fromEntries(formData.entries());
-      sampleData.id = Date.now().toString(); // Simple ID generation
+      
+      // Use specimen code as ID if available, otherwise generate one
+      if (sampleData.code && sampleData.code !== 'NEW-000') {
+        sampleData.id = sampleData.code;
+      } else {
+        sampleData.id = Date.now().toString();
+      }
+      
+      // Get site details for coordinates and geology
+      if (sampleData.siteId) {
+        const site = sites.find(s => s.id === sampleData.siteId);
+        if (site) {
+          sampleData.coordinates = site.coordinates ? `${site.coordinates.lat}°N, ${site.coordinates.lon}°E` : '';
+          sampleData.geology = site.geology || '';
+        }
+      }
       
       try {
         const response = await fetch('/api/samples', {
