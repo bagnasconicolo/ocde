@@ -273,7 +273,7 @@ window.addEventListener("load", () => {
           .map((row) => ({
             lat: +row[parsed.meta.fields[latIdx]],
             lon: +row[parsed.meta.fields[lonIdx]],
-            dose: +(row[parsed.meta.fields[doseIdx]] ?? 0) * factor,
+            dose: +(row[parsed.meta.fields[doseIdx]] ?? 0), // CSV files from RC-102 are already in µSv/h
             cps: +(row[parsed.meta.fields[cpsIdx]] ?? 0),
             energy: +row.energy || +row.energy_ev || NaN,
             date: +(row[parsed.meta.fields[dateIdx]] ?? 0),
@@ -300,7 +300,7 @@ window.addEventListener("load", () => {
         .map((r) => ({
           lat: +r[2],
           lon: +r[3],
-          dose: +r[5], // RC-102 CSV files are already in µSv/h, no conversion needed
+          dose: +r[5], // RC-102 CSV files are already in µSv/h
           cps: +r[6],
           energy: +r[7] || NaN,
           date: +r[0] || 0,
@@ -314,7 +314,7 @@ window.addEventListener("load", () => {
       .map((r) => ({
         lat: +r[0],
         lon: +r[1],
-        dose: +r[2] * defaultFactor,
+        dose: +r[2], // Generic CSV assumed to be in µSv/h
         cps: +r[3],
         energy: +r[4] || NaN,
         date: 0,
@@ -687,17 +687,17 @@ window.addEventListener("load", () => {
                 <div class='glass-panel p-2 rounded-lg'>
                   <div class='text-gray-400'>Dose min</div>
                   <div id='stat-min-dose-${uid}' class='text-lg font-semibold text-sky-400'>0</div>
-                  <div class='text-gray-400'>µR/h</div>
+                  <div class='text-gray-400'>µSv/h</div>
                 </div>
                 <div class='glass-panel p-2 rounded-lg'>
                   <div class='text-gray-400'>Dose avg</div>
                   <div id='stat-avg-dose-${uid}' class='text-lg font-semibold text-sky-400'>0</div>
-                  <div class='text-gray-400'>µR/h</div>
+                  <div class='text-gray-400'>µSv/h</div>
                 </div>
                 <div class='glass-panel p-2 rounded-lg'>
                   <div class='text-gray-400'>Dose max</div>
                   <div id='stat-max-dose-${uid}' class='text-lg font-semibold text-sky-400'>0</div>
-                  <div class='text-gray-400'>µR/h</div>
+                  <div class='text-gray-400'>µSv/h</div>
                 </div>
               <div class='glass-panel p-2 rounded-lg'>
                 <div class='text-gray-400'>Rate min</div>
@@ -744,17 +744,17 @@ window.addEventListener("load", () => {
 
             animateCounter(
               document.getElementById(`stat-min-dose-${uid}`),
-              stats.minDose * USV_TO_UR,
+              stats.minDose,
               3
             );
             animateCounter(
               document.getElementById(`stat-avg-dose-${uid}`),
-              stats.avgDose * USV_TO_UR,
+              stats.avgDose,
               3
             );
             animateCounter(
               document.getElementById(`stat-max-dose-${uid}`),
-              stats.maxDose * USV_TO_UR,
+              stats.maxDose,
               3
             );
           animateCounter(
@@ -778,7 +778,7 @@ window.addEventListener("load", () => {
             const plotDoseDiv = document.getElementById(plotDoseId);
             if (!plotCpsDiv || !plotDoseDiv) return;
             const x = filtered.map((p) => new Date(p.date * 1000));
-              const dosesArr = filtered.map((p) => p.dose * USV_TO_UR);
+              const dosesArr = filtered.map((p) => p.dose);
               const cpsArr = filtered.map((p) => p.cps);
 
             const movingAvg = (arr, w) => {
@@ -836,7 +836,7 @@ window.addEventListener("load", () => {
                     {
                       x,
                       y: vals,
-                      name: "Dose (µR/h)",
+                      name: "Dose (µSv/h)",
                       type: "scatter",
                       mode: "lines",
                       line: {
@@ -856,7 +856,7 @@ window.addEventListener("load", () => {
                       showgrid: false,
                       rangeslider: { visible: true },
                     },
-                    yaxis: { title: "µR/h", showgrid: false },
+                    yaxis: { title: "µSv/h", showgrid: false },
                   },
                   { responsive: true, displaylogo: false }
                 );
@@ -901,7 +901,7 @@ window.addEventListener("load", () => {
                   paper_bgcolor: "#1f2937",
                   plot_bgcolor: "#1f2937",
                   font: { color: "#ffffff", size: 10 },
-                  xaxis: { title: "µR/h", showgrid: false },
+                  xaxis: { title: "µSv/h", showgrid: false },
                   yaxis: { title: "freq", showgrid: false },
                 },
                 { responsive: true, displaylogo: false }
@@ -998,9 +998,9 @@ window.addEventListener("load", () => {
         const legendMin = document.getElementById("legend-min");
         const legendMax = document.getElementById("legend-max");
         const decimals = metric === "dose" ? 3 : 1;
-        const factor = metric === "dose" ? USV_TO_UR : 1;
+        const factor = metric === "dose" ? 1 : 1;
         legendLabel.textContent =
-          metric === "dose" ? "Dose (µR/h)" : "Rate (cps)";
+          metric === "dose" ? "Dose (µSv/h)" : "Rate (cps)";
         legendMin.textContent = (min * factor).toFixed(decimals);
         legendMax.textContent = (max * factor).toFixed(decimals);
       const cMin = colorScale(min, min, max);
@@ -1037,13 +1037,13 @@ window.addEventListener("load", () => {
       const hasEnergy = Number.isFinite(p.energy) && p.energy > 0;
       const cols = hasEnergy ? 3 : 2;
       let popupHtml = `<div class='prose prose-sm prose-invert'>`;
-        const doseUr = (p.dose * USV_TO_UR).toFixed(3);
+        const doseSv = p.dose.toFixed(3);
         popupHtml +=
           `<div class='grid grid-cols-${cols} gap-2 text-center text-xs'>` +
           `<div class='glass-panel p-2 rounded-lg'>` +
           `<div class='text-gray-400'>Dose</div>` +
-          `<div class='text-lg font-semibold text-sky-400'>${doseUr}</div>` +
-          `<div class='text-gray-400'>µR/h</div>` +
+          `<div class='text-lg font-semibold text-sky-400'>${doseSv}</div>` +
+          `<div class='text-gray-400'>µSv/h</div>` +
           `</div>` +
           `<div class='glass-panel p-2 rounded-lg'>` +
           `<div class='text-gray-400'>Rate</div>` +
