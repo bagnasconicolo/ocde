@@ -375,26 +375,68 @@
           </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-1 gap-4">
-          <div>
-            <label for="sampleWeight" class="block text-sm font-medium text-gray-300 mb-1">Weight (g)</label>
-            <input type="number" id="sampleWeight" name="weight" step="0.1"
+        <!-- Physical Properties -->
+        <div>
+          <h3 class="text-lg font-semibold mb-3 text-yellow-400">Physical Properties</h3>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label for="sampleWeight" class="block text-sm font-medium text-gray-300 mb-1">Weight (g)</label>
+              <input type="number" id="sampleWeight" name="weight" step="0.1"
+                     class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-yellow-500">
+            </div>
+            <div>
+              <label for="sampleDimensions" class="block text-sm font-medium text-gray-300 mb-1">Dimensions (mm)</label>
+              <input type="text" id="sampleDimensions" name="dimensions" placeholder="e.g., 45 × 32 × 28 mm"
+                     class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-yellow-500">
+            </div>
+          </div>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+            <div>
+              <label for="sampleColor" class="block text-sm font-medium text-gray-300 mb-1">Color/Appearance</label>
+              <input type="text" id="sampleColor" name="color" placeholder="e.g., Dark gray to black with green-yellow alteration"
+                     class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-yellow-500">
+            </div>
+            <div>
+              <label for="sampleCrystalSystem" class="block text-sm font-medium text-gray-300 mb-1">Crystal System</label>
+              <input type="text" id="sampleCrystalSystem" name="crystalSystem" placeholder="e.g., Cubic, Tetragonal, etc."
+                     class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-yellow-500">
+            </div>
+          </div>
+          
+          <div class="mt-4">
+            <label for="sampleIsotopes" class="block text-sm font-medium text-gray-300 mb-1">Primary Isotopes</label>
+            <input type="text" id="sampleIsotopes" name="isotopes" placeholder="e.g., U-238, U-235, Ra-226, Th-230"
                    class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-yellow-500">
           </div>
         </div>
 
+        <!-- Collection Information -->
         <div>
-          <label for="sampleSite" class="block text-sm font-medium text-gray-300 mb-1">Collection Site</label>
-          <select id="sampleSite" name="siteId" required
-                  class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-yellow-500">
-            <option value="">Select collection site</option>
-          </select>
-        </div>
-
-        <div>
-          <label for="sampleNotes" class="block text-sm font-medium text-gray-300 mb-1">Collection Notes</label>
-          <textarea id="sampleNotes" name="notes" rows="3"
-                    class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-yellow-500"></textarea>
+          <h3 class="text-lg font-semibold mb-3 text-yellow-400">Collection Information</h3>
+          
+          <div class="grid grid-cols-1 md:grid-cols-1 gap-4">
+            <div>
+              <label for="sampleSite" class="block text-sm font-medium text-gray-300 mb-1">Collection Site</label>
+              <select id="sampleSite" name="siteId" required
+                      class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-yellow-500">
+                <option value="">Select collection site</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="mt-4">
+            <label for="sampleGeology" class="block text-sm font-medium text-gray-300 mb-1">Geological Context</label>
+            <input type="text" id="sampleGeology" name="geology" placeholder="e.g., Granite-hosted hydrothermal veins with quartz gangue"
+                   class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-yellow-500">
+          </div>
+          
+          <div class="mt-4">
+            <label for="sampleNotes" class="block text-sm font-medium text-gray-300 mb-1">Collection Notes</label>
+            <textarea id="sampleNotes" name="notes" rows="3" placeholder="Field observations, handling notes, collection conditions..."
+                      class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-yellow-500"></textarea>
+          </div>
         </div>
 
         <!-- Image Upload -->
@@ -405,13 +447,18 @@
           <p class="text-gray-400 text-xs mt-1">Select multiple images of the specimen</p>
         </div>
 
-        <div class="flex justify-end gap-3 pt-4">
-          <button type="button" id="cancelEditBtn" class="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors">
-            Cancel
+        <div class="flex justify-between items-center pt-4">
+          <button type="button" id="deleteSampleBtn" class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors hidden">
+            Delete Sample
           </button>
-          <button type="submit" class="px-4 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 transition-colors">
-            Save Sample
-          </button>
+          <div class="flex gap-3">
+            <button type="button" id="cancelEditBtn" class="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors">
+              Cancel
+            </button>
+            <button type="submit" class="px-4 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 transition-colors">
+              Save Sample
+            </button>
+          </div>
         </div>
 
       </form>
@@ -461,6 +508,7 @@
       document.getElementById('closeModal').addEventListener('click', closeSampleModal);
       document.getElementById('closeEditModal').addEventListener('click', closeEditModal);
       document.getElementById('cancelEditBtn').addEventListener('click', closeEditModal);
+      document.getElementById('deleteSampleBtn').addEventListener('click', deleteSample);
       
       // Form submission
       document.getElementById('sampleForm').addEventListener('submit', saveSample);
@@ -490,6 +538,26 @@
       });
       document.getElementById('editSampleModal').addEventListener('click', (e) => {
         if (e.target === e.currentTarget) closeEditModal();
+      });
+      
+      // Event delegation for sample cards and edit buttons
+      document.getElementById('samplesContainer').addEventListener('click', (e) => {
+        // Handle edit button clicks
+        if (e.target.classList.contains('edit-sample-btn')) {
+          e.stopPropagation();
+          const sampleId = e.target.dataset.sampleId;
+          const sample = samples.find(s => s.id === sampleId);
+          if (sample) openEditModal(sample);
+          return;
+        }
+        
+        // Handle sample card clicks
+        if (e.target.closest('.sample-card')) {
+          const card = e.target.closest('.sample-card');
+          const sampleId = card.dataset.sampleId;
+          const sample = samples.find(s => s.id === sampleId);
+          if (sample) openSampleModal(sample);
+        }
       });
     }
 
@@ -538,24 +606,8 @@
       
       container.innerHTML = samples.map(sample => createSampleCard(sample)).join('');
       
-      // Add click listeners to cards
-      document.querySelectorAll('.sample-card').forEach(card => {
-        card.addEventListener('click', () => {
-          const sampleId = card.dataset.sampleId;
-          const sample = samples.find(s => s.id === sampleId);
-          if (sample) openSampleModal(sample);
-        });
-      });
-      
-      // Add click listeners to edit buttons
-      document.querySelectorAll('.edit-sample-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          const sampleId = btn.dataset.sampleId;
-          const sample = samples.find(s => s.id === sampleId);
-          if (sample) openEditModal(sample);
-        });
-      });
+      // Event delegation for sample cards and edit buttons
+      // (No individual event listeners needed - using delegation set up in setupEventListeners)
     }
 
     function createSampleCard(sample) {
@@ -686,6 +738,7 @@
       const modal = document.getElementById('editSampleModal');
       const title = document.getElementById('editModalTitle');
       const form = document.getElementById('sampleForm');
+      const deleteBtn = document.getElementById('deleteSampleBtn');
       
       // Populate site dropdown
       const siteSelect = document.getElementById('sampleSite');
@@ -699,14 +752,28 @@
       
       if (sample) {
         title.textContent = 'Edit Sample';
+        deleteBtn.classList.remove('hidden');
+        
         // Populate form with sample data
         Object.keys(sample).forEach(key => {
           const input = form.querySelector(`[name="${key}"]`);
           if (input) input.value = sample[key] || '';
         });
+        
+        // Display existing images
+        displayCurrentImages(sample);
+        
+        // Store current sample ID for deletion
+        form.dataset.sampleId = sample.id;
       } else {
         title.textContent = 'Add New Sample';
+        deleteBtn.classList.add('hidden');
         form.reset();
+        delete form.dataset.sampleId;
+        
+        // Clear existing images display
+        document.getElementById('currentImages').innerHTML = '';
+        
         // Generate specimen code for new samples
         generateSpecimenCode();
       }
@@ -747,6 +814,7 @@
       
       const form = e.target;
       const formData = new FormData(form);
+      const isEditing = !!form.dataset.sampleId;
       
       // Extract non-file data
       const sampleData = {};
@@ -756,25 +824,36 @@
         }
       }
       
-      // Use specimen code as ID if available, otherwise generate one
-      if (sampleData.code && sampleData.code !== 'NEW-000') {
-        sampleData.id = sampleData.code;
+      // Use existing ID if editing, otherwise use specimen code or generate one
+      if (isEditing) {
+        sampleData.id = form.dataset.sampleId;
+        // Preserve existing images
+        const existingSample = samples.find(s => s.id === sampleData.id);
+        sampleData.images = existingSample?.images || [];
       } else {
-        sampleData.id = Date.now().toString();
+        if (sampleData.code && sampleData.code !== 'NEW-000') {
+          sampleData.id = sampleData.code;
+        } else {
+          sampleData.id = Date.now().toString();
+        }
+        sampleData.images = [];
       }
       
-      // Get site details for coordinates and geology
-      if (sampleData.siteId) {
+      // Get site details for coordinates if not manually entered
+      if (sampleData.siteId && !sampleData.geology) {
         const site = sites.find(s => s.id === sampleData.siteId);
         if (site) {
-          sampleData.coordinates = site.coordinates ? `${site.coordinates.lat}°N, ${site.coordinates.lon}°E` : '';
-          sampleData.geology = site.geology || '';
+          if (!sampleData.coordinates && site.coordinates) {
+            sampleData.coordinates = `${site.coordinates.lat}°N, ${site.coordinates.lon}°E`;
+          }
+          if (!sampleData.geology && site.geology) {
+            sampleData.geology = site.geology;
+          }
         }
       }
       
-      // Handle image uploads
+      // Handle new image uploads
       const imageFiles = form.querySelector('input[name="images"]').files;
-      sampleData.images = [];
       
       if (imageFiles.length > 0) {
         for (let i = 0; i < imageFiles.length; i++) {
@@ -816,6 +895,93 @@
       } catch (error) {
         console.error('Error saving sample:', error);
         alert('Failed to save sample');
+      }
+    }
+
+    function displayCurrentImages(sample) {
+      const container = document.getElementById('currentImages');
+      if (!sample.images || sample.images.length === 0) {
+        container.innerHTML = '<p class="text-gray-400 text-sm">No existing images</p>';
+        return;
+      }
+      
+      container.innerHTML = `
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-2 mb-2">
+          ${sample.images.map((img, index) => `
+            <div class="relative group">
+              <img src="${img}" alt="${sample.name}" class="w-full h-20 object-cover rounded border">
+              <button type="button" class="delete-image-btn absolute top-1 right-1 bg-red-600 text-white w-5 h-5 rounded-full text-xs opacity-0 group-hover:opacity-100 transition-opacity" 
+                      data-sample-id="${sample.id}" data-image-path="${img}" data-image-index="${index}">
+                ×
+              </button>
+            </div>
+          `).join('')}
+        </div>
+      `;
+      
+      // Add event listeners for delete buttons
+      container.querySelectorAll('.delete-image-btn').forEach(btn => {
+        btn.addEventListener('click', deleteImage);
+      });
+    }
+    
+    async function deleteImage(e) {
+      const button = e.target;
+      const sampleId = button.dataset.sampleId;
+      const imagePath = button.dataset.imagePath;
+      const imageIndex = parseInt(button.dataset.imageIndex);
+      
+      if (!confirm('Are you sure you want to delete this image?')) return;
+      
+      try {
+        // Extract image name from path
+        const imageName = imagePath.split('/').pop();
+        
+        const response = await fetch(`/api/samples/${sampleId}/images/${imageName}`, {
+          method: 'DELETE'
+        });
+        
+        if (response.ok) {
+          // Remove image from current sample data
+          const sample = samples.find(s => s.id === sampleId);
+          if (sample && sample.images) {
+            sample.images.splice(imageIndex, 1);
+            displayCurrentImages(sample);
+          }
+        } else {
+          alert('Failed to delete image');
+        }
+      } catch (error) {
+        console.error('Error deleting image:', error);
+        alert('Failed to delete image');
+      }
+    }
+    
+    async function deleteSample() {
+      const form = document.getElementById('sampleForm');
+      const sampleId = form.dataset.sampleId;
+      
+      if (!sampleId) return;
+      
+      const sample = samples.find(s => s.id === sampleId);
+      const sampleName = sample ? sample.name : 'this sample';
+      
+      if (!confirm(`Are you sure you want to delete ${sampleName}? This action cannot be undone.`)) return;
+      
+      try {
+        const response = await fetch(`/api/samples/${sampleId}`, {
+          method: 'DELETE'
+        });
+        
+        if (response.ok) {
+          await loadSamples(); // Reload samples
+          closeEditModal();
+        } else {
+          alert('Failed to delete sample');
+        }
+      } catch (error) {
+        console.error('Error deleting sample:', error);
+        alert('Failed to delete sample');
       }
     }
 
